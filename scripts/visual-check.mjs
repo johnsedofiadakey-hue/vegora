@@ -7,7 +7,7 @@ const widths = [320, 390, 768, 1440];
 try {
   for (const width of widths) {
     const page = await browser.newPage({ viewport: { width, height: width < 500 ? 844 : 1000 }, deviceScaleFactor: 1 });
-    await page.goto(baseUrl, { waitUntil: "networkidle" });
+    await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
     const state = await page.evaluate(() => ({
       width: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -55,12 +55,12 @@ try {
       await page.locator('.header-actions a[aria-label="Shopping bag"]').click();
       await page.waitForURL(`${baseUrl}/bag`);
       if (!(await page.getByRole("heading", { name: "Shopping bag" }).isVisible())) throw new Error("Bag navigation failed");
-      await page.goto(`${baseUrl}/checkout`, { waitUntil: "networkidle" });
-      if (!(await page.getByRole("heading", { name: "Checkout is being prepared." }).isVisible())) throw new Error("Closed checkout is not explained");
+      await page.goto(`${baseUrl}/checkout`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await page.getByRole("heading", { name: "Checkout is being prepared." }).waitFor({ timeout: 30000 });
       const checkoutWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       if (checkoutWidth > width) throw new Error("Checkout overflows at 390px");
-      await page.goto(`${baseUrl}/checkout/return?reference=invalid`, { waitUntil: "networkidle" });
-      if (!(await page.getByRole("heading", { name: "We could not confirm your payment" }).isVisible())) throw new Error("Invalid payment reference is not handled");
+      await page.goto(`${baseUrl}/checkout/return?reference=invalid`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await page.getByRole("heading", { name: "We could not confirm your payment" }).waitFor({ timeout: 30000 });
     }
     await page.close();
   }
