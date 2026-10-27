@@ -5,5 +5,21 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "apphosting": {
+    "backendId": "vegora",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      ".env",
+      ".env.*",
+      ".next",
+      ".firebase",
+      "output",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ]
   }
 }
