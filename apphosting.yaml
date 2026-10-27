@@ -1,0 +1,27 @@
+# Public Firebase web configuration for the VEGORA App Hosting preview.
+# Checkout flags and payment secrets are intentionally absent.
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCicY3zLGVy8t7d2Bd4O81d2oK6wcueclM
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: vegoragh.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: vegoragh
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:152798677943:web:9bb9f57bd57320de973632"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_PROJECT_ID
+    value: vegoragh
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: vegoragh.firebasestorage.app

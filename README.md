@@ -15,7 +15,7 @@ Open the Local URL printed by Next.js. Run `npm run typecheck`, `npm run lint`, 
 
 ## Admin and catalog
 
-The admin panel is at `/admin`. Firebase Auth, Firestore, and Storage must be configured before sign-in, product editing, image uploads, or public catalog data can work. Copy `.env.example` to `.env.local` and fill the values locally. Follow [ADMIN_SETUP.md](ADMIN_SETUP.md) to configure the Firebase project, deploy deny-all browser rules and indexes, and grant the first operator an admin claim. Do not commit credentials.
+The admin panel is at `/admin`. The public Firebase web app is linked in `apphosting.yaml`, but Firebase Auth, Firestore, and Storage must be enabled before sign-in, product editing, image uploads, or public catalog data can work. Copy `.env.example` to `.env.local` and fill the values locally. App Hosting uses its managed server identity; local admin development still needs a service account. Follow [ADMIN_SETUP.md](ADMIN_SETUP.md) to configure the Firebase services, deploy deny-all browser rules and indexes, and grant the first operator an admin claim. Do not commit credentials.
 
 Product prices are stored as integer pesewas and displayed in GHS. Draft products remain hidden from the public catalog. No products or prices have been invented for this starter; an operator can add real items through admin once Firebase is configured.
 

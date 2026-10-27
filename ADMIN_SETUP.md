@@ -4,7 +4,7 @@ The storefront can render before services are configured. Catalog APIs return `5
 
 ## Firebase configuration
 
-Create a Firebase project with Authentication (Email/Password), Firestore, and Cloud Storage. Put the following values in a local `.env.local` and in the deployment's secret/environment settings. Never commit the values.
+The `vegoragh` Firebase web app is connected in `apphosting.yaml`. For local admin development, enable Authentication (Email/Password), Firestore, and Cloud Storage, then put the following values in `.env.local`. App Hosting uses its managed identity for the server and does not need a downloaded service-account key. Never commit local private-key values.
 
 ```dotenv
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -17,7 +17,7 @@ FIREBASE_PRIVATE_KEY=
 FIREBASE_STORAGE_BUCKET=
 ```
 
-`FIREBASE_PRIVATE_KEY` may contain literal `\\n` sequences; the server converts them to newlines. The client Firebase values identify the project and are public. The service account values are secrets and must remain server-side. Do not use a service account key in browser code.
+`FIREBASE_PRIVATE_KEY` may contain literal `\\n` sequences; the server converts them to newlines. The client Firebase values identify the project and are public. The local service account values are secrets and must remain server-side. Do not use a service account key in browser code.
 
 Deploy `firestore.rules`, `storage.rules`, and `firestore.indexes.json` for the matching project before publishing products. Both rule sets deny direct client access. The Next.js server authenticates each admin request and uses the Admin SDK. Create the first admin user in Firebase Authentication, then run `node scripts/grant-admin.mjs admin@example.com` with the server credentials in your shell environment. Sign out and back in after the claim is set. Only trusted operators should receive this claim.
 
