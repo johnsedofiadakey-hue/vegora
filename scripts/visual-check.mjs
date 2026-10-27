@@ -18,6 +18,23 @@ try {
     if (state.scrollWidth > state.width || !state.searchVisible || !state.bagVisible || !state.title) {
       throw new Error(`Storefront layout check failed at ${width}px: ${JSON.stringify(state)}`);
     }
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.75));
+    const layering = await page.evaluate(() => {
+      const hero = document.querySelector(".gallery-hero");
+      const surface = document.querySelector(".home-surface");
+      if (!hero || !surface) return null;
+      return {
+        heroPosition: getComputedStyle(hero).position,
+        heroTop: Math.round(hero.getBoundingClientRect().top),
+        surfaceTop: Math.round(surface.getBoundingClientRect().top),
+        surfaceLayer: Number(getComputedStyle(surface).zIndex),
+        heroLayer: Number(getComputedStyle(hero).zIndex),
+      };
+    });
+    if (!layering || layering.heroPosition !== "sticky" || Math.abs(layering.heroTop) > 2 || layering.surfaceLayer <= layering.heroLayer) {
+      throw new Error(`Pinned hero check failed at ${width}px: ${JSON.stringify(layering)}`);
+    }
+    await page.screenshot({ path: `/tmp/vegora-${width}-scroll.png` });
     for (const image of await page.locator("img").all()) {
       await image.scrollIntoViewIfNeeded();
       const loaded = await image.evaluate(async (element) => {
@@ -29,7 +46,7 @@ try {
     }
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `/tmp/vegora-${width}-full.png`, fullPage: true });
-    console.log(JSON.stringify(state));
+    console.log(JSON.stringify({ ...state, layering }));
     if (width === 390) {
       await page.getByRole("button", { name: "Open menu" }).click();
       await page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Men", exact: true }).click();
