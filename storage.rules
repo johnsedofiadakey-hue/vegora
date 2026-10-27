@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Product media is uploaded and served by authenticated server routes.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

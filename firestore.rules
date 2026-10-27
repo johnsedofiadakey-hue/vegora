@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Browser SDK access is disabled. The server verifies admin ID tokens and
+    // uses Admin SDK for catalog operations. Customer data stays server-owned.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
