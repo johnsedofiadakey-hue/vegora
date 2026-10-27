@@ -17,7 +17,7 @@ Open the Local URL printed by Next.js. Run `npm run typecheck`, `npm run lint`, 
 
 The editorial storefront preview is deployed at [vegora--vegoragh.europe-west4.hosted.app](https://vegora--vegoragh.europe-west4.hosted.app/). The `vegora` App Hosting backend is in `europe-west4`; `apphosting.yaml` supplies only public Firebase web identifiers and the project/bucket names. To deploy a reviewed local change to this backend, run `firebase deploy --only apphosting:vegora --project vegoragh`. Source archive rules in `firebase.json` exclude `.env.local`, build output, and dependencies.
 
-This preview is for visual review. Firestore, Firebase Authentication, and the product Storage bucket have not yet been provisioned, so the catalog shows its preparation state and admin sign-in cannot be used. Checkout remains closed.
+This preview is for visual review. The Firestore database and product Storage bucket have not yet been provisioned; admin users and access have not been set up or verified. The catalog shows its preparation state, the admin workflow is not ready, and checkout remains closed.
 
 ## Admin and catalog
 
