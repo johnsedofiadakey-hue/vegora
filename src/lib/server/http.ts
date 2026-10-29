@@ -2,6 +2,7 @@ import "server-only";
 
 import { ServerConfigError } from "./firebase-admin";
 import { PaystackError } from "./paystack";
+import { classifyServiceError } from "./service-errors";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -19,6 +20,11 @@ export function jsonError(error: unknown): Response {
   }
   if (error instanceof PaystackError) {
     return Response.json({ error: "Payment provider is unavailable. Please try again later" }, { status: 502 });
+  }
+  const service = classifyServiceError(error);
+  if (service) {
+    console.error(`VEGORA store service ${service.kind}: ${service.hint}`, error);
+    return Response.json({ error: "Store service is unavailable", reason: service.kind }, { status: 503 });
   }
   console.error("VEGORA API error", error);
   return Response.json({ error: "Unable to complete this request" }, { status: 500 });
