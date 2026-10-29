@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
-import type { Product, ProductImage, ProductInput, ProductVariant, ProductStatus, Audience } from "@/lib/catalog";
+import type { Product, ProductInput, ProductStatus, Audience } from "@/lib/catalog";
 import { formatGhs } from "@/lib/catalog";
 import { adminAuth } from "@/lib/admin-client";
+import { ProductAssetsEditor } from "./product-assets-editor";
 import styles from "./admin.module.css";
 
 const emptyProduct: ProductInput = {
@@ -128,18 +128,49 @@ export default function AdminPage() {
     finally { setBusy(false); }
   }
 
-  async function uploadImage(file: File) {
+  async function importPreviewProducts() {
     setBusy(true); setMessage("");
     try {
-      const data = new FormData(); data.append("file", file);
-      const result = await adminFetch("/api/admin/upload", { method: "POST", body: data });
-      setEditing((current) => ({ ...current, images: [...current.images, { url: result.url, alt: current.name || "Product image" }] }));
-      setMessage("Image uploaded. Save the product to keep it in the catalog.");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Image upload failed"); }
-    finally { setBusy(false); }
+      const result: { created: string[]; skipped: string[] } = await adminFetch("/api/admin/import-preview", { method: "POST" });
+      await loadProducts();
+      setMessage(`Imported ${result.created.length} draft ${result.created.length === 1 ? "product" : "products"}. ${result.skipped.length} existing ${result.skipped.length === 1 ? "product was" : "products were"} left unchanged. Review names, prices, sizes and stock before publishing.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to import preview products");
+    } finally { setBusy(false); }
+  }
+
+  async function uploadImages(files: File[]) {
+    const available = 12 - editing.images.length;
+    if (files.length > available) {
+      setMessage(`Choose no more than ${available} additional ${available === 1 ? "image" : "images"}.`);
+      return;
+    }
+    const invalid = files.find((file) => file.size === 0 || file.size > 8 * 1024 * 1024 ||
+      !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type));
+    if (invalid) {
+      setMessage(`${invalid.name} must be a JPEG, PNG, WebP or AVIF under 8 MB.`);
+      return;
+    }
+    setBusy(true); setMessage("");
+    const uploaded: { url: string; alt: string }[] = [];
+    try {
+      for (const [index, file] of files.entries()) {
+        setMessage(`Uploading image ${index + 1} of ${files.length}…`);
+        const data = new FormData(); data.append("file", file);
+        const result = await adminFetch("/api/admin/upload", { method: "POST", body: data });
+        uploaded.push({ url: result.url, alt: editing.name || "Product image" });
+      }
+      setMessage(`${uploaded.length} ${uploaded.length === 1 ? "image" : "images"} uploaded. Save the product to add them to the catalog.`);
+    } catch (error) {
+      setMessage(`${uploaded.length} of ${files.length} images uploaded. ${error instanceof Error ? error.message : "Image upload failed"}`);
+    } finally {
+      if (uploaded.length) setEditing((current) => ({ ...current, images: [...current.images, ...uploaded] }));
+      setBusy(false);
+    }
   }
 
   function selectProduct(product: Product) {
+    if (busy) return;
     setOriginalSlug(product.slug);
     setEditing({
       slug: product.slug, name: product.name, description: product.description,
@@ -149,14 +180,6 @@ export default function AdminPage() {
       status: product.status, featured: product.featured,
     });
     setMessage(""); window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function updateImage(index: number, patch: Partial<ProductImage>) {
-    setEditing((current) => ({ ...current, images: current.images.map((image, at) => at === index ? { ...image, ...patch } : image) }));
-  }
-
-  function updateVariant(index: number, patch: Partial<ProductVariant>) {
-    setEditing((current) => ({ ...current, variants: current.variants.map((variant, at) => at === index ? { ...variant, ...patch } : variant) }));
   }
 
   if (!ready) return <main className={styles.shell}>Loading admin…</main>;
@@ -171,7 +194,7 @@ export default function AdminPage() {
       <section className={styles.editor}>{message && <p role="status" className={styles.message}>{message}</p>}{(() => { const order = orders.find((item) => item.reference === selectedOrder) ?? orders[0]; return order ? <><p className={styles.eyebrow}>ORDER {order.reference}</p><h1 className={styles.orderTitle}>{order.customer.name}</h1><p className={styles.orderStatus}>{order.status.replaceAll("_", " ")}</p><p className={styles.orderMeta}>Placed {new Date(order.createdAt).toLocaleString("en-GH")}{order.paidAt ? ` · Paid ${new Date(order.paidAt).toLocaleString("en-GH")}` : ""}</p><div className={styles.orderBlock}><h2>Items</h2>{order.lines.map((line) => <div className={styles.orderRow} key={`${line.sku}-${line.size}`}><span>{line.name} · {line.size} × {line.quantity}<small>{line.sku}</small></span><strong>{formatGhs(line.lineTotalMinor)}</strong></div>)}<div className={styles.orderRow}><span>Subtotal</span><strong>{formatGhs(order.subtotalMinor)}</strong></div><div className={styles.orderRow}><span>Delivery</span><strong>{formatGhs(order.deliveryFeeMinor)}</strong></div><div className={styles.orderRow}><span>Total</span><strong>{formatGhs(order.totalMinor)}</strong></div></div><div className={styles.orderBlock}><h2>Customer & delivery</h2><p>{order.email}<br />{order.customer.phone}</p><p>{order.delivery.addressLine1}{order.delivery.addressLine2 ? `, ${order.delivery.addressLine2}` : ""}<br />{order.delivery.city}, {order.delivery.region}<br />{order.delivery.zoneLabel}</p>{order.delivery.notes && <p>Note: {order.delivery.notes}</p>}</div></> : <><p className={styles.eyebrow}>ORDER DESK</p><h1 className={styles.orderTitle}>No orders yet</h1><p>Orders will appear after test checkout is configured and used.</p></>; })()}</section>
     </div> :
     <div className={styles.layout}>
-      <aside className={styles.sidebar}><p className={styles.eyebrow}>CATALOG</p><h2>Products <span>{products.length}</span></h2><button className={styles.newButton} onClick={() => { setEditing({ ...emptyProduct }); setOriginalSlug(null); setMessage(""); }}>+ New product</button><div className={styles.productList}>{products.map((product) => <button key={product.id} className={product.slug === originalSlug ? styles.selected : ""} onClick={() => selectProduct(product)}><strong>{product.name}</strong><small>{product.status} · {formatGhs(product.priceMinor)}</small></button>)}</div><p className={styles.sideNote}>Orders and payment actions appear after Paystack checkout and reconciliation are verified.</p></aside>
+      <aside className={styles.sidebar}><p className={styles.eyebrow}>CATALOG</p><h2>Products <span>{products.length}</span></h2><button className={styles.newButton} disabled={busy} onClick={() => { setEditing({ ...emptyProduct }); setOriginalSlug(null); setMessage(""); }}>+ New product</button><button className={styles.newButton} disabled={busy} onClick={importPreviewProducts}>Import seven preview styles</button><div className={styles.productList}>{products.map((product) => <button key={product.id} disabled={busy} className={product.slug === originalSlug ? styles.selected : ""} onClick={() => selectProduct(product)}><strong>{product.name}</strong><small>{product.status} · {formatGhs(product.priceMinor)}</small></button>)}</div><p className={styles.sideNote}>Import creates editable drafts with no sizes or stock. Existing products stay unchanged.</p></aside>
       <section className={styles.editor}><div className={styles.editorTop}><div><p className={styles.eyebrow}>PRODUCT DETAILS</p><h1>{originalSlug ? "Edit product" : "New product"}</h1></div><span className={styles.status}>{editing.status}</span></div>
         {message && <p role="status" className={styles.message}>{message}</p>}
         <form onSubmit={saveProduct}>
@@ -180,11 +203,7 @@ export default function AdminPage() {
           <div className={styles.grid}><label>Collection<select value={editing.audience} onChange={(e) => setEditing({ ...editing, audience: e.target.value as Audience })}><option value="women">Women</option><option value="men">Men</option><option value="unisex">Unisex</option></select></label><label>Category<input value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} placeholder="Tailoring" required /></label></div>
           <div className={styles.grid}><label>Price (GHS)<input type="number" min="0" step="0.01" value={editing.priceMinor === null ? "" : (editing.priceMinor / 100).toFixed(2)} onChange={(e) => setEditing({ ...editing, priceMinor: e.target.value === "" ? null : Math.round(Number(e.target.value) * 100) })} placeholder="0.00" /></label><label>Status<select value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as ProductStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label></div>
           <label className={styles.checkbox}><input type="checkbox" checked={editing.featured} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} /> Feature on storefront</label>
-          <div className={styles.sectionHead}><div><p className={styles.eyebrow}>VISUALS</p><h2>Product images</h2></div><label className={styles.uploadButton}>+ Upload image<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadImage(file); e.target.value = ""; }} /></label></div>
-          <div className={styles.imageGrid}>{editing.images.map((image, index) => <div key={image.url} className={styles.imageCard}><Image src={image.url} alt={image.alt} width={300} height={400} unoptimized /><input aria-label={`Image ${index + 1} description`} value={image.alt} onChange={(e) => updateImage(index, { alt: e.target.value })} /><button type="button" onClick={() => setEditing({ ...editing, images: editing.images.filter((_, at) => at !== index) })}>Remove</button></div>)}</div>
-          {editing.images.length === 0 && <p className={styles.hint}>Upload original product photography before publishing.</p>}
-          <div className={styles.sectionHead}><div><p className={styles.eyebrow}>INVENTORY</p><h2>Sizes & stock</h2></div><button type="button" className={styles.uploadButton} onClick={() => setEditing({ ...editing, variants: [...editing.variants, { id: crypto.randomUUID(), sku: "", size: "", stock: 0 }] })}>+ Add size</button></div>
-          {editing.variants.map((variant, index) => <div key={variant.id} className={styles.variantRow}><label>Size<input value={variant.size} onChange={(e) => updateVariant(index, { size: e.target.value })} placeholder="M" /></label><label>SKU<input value={variant.sku} onChange={(e) => updateVariant(index, { sku: e.target.value.toUpperCase() })} placeholder="VG-001-M" /></label><label>Stock<input type="number" min="0" step="1" value={variant.stock} onChange={(e) => updateVariant(index, { stock: Number(e.target.value) })} /></label><button type="button" onClick={() => setEditing({ ...editing, variants: editing.variants.filter((_, at) => at !== index) })} aria-label={`Remove size ${variant.size || index + 1}`}>×</button></div>)}
+          <ProductAssetsEditor product={editing} onChange={setEditing} onUpload={uploadImages} busy={busy} />
           <div className={styles.actions}><button type="submit" disabled={busy}>{busy ? "Working…" : "Save product"}</button>{originalSlug && <button type="button" className={styles.archive} onClick={archive} disabled={busy}>Archive</button>}</div>
         </form>
       </section>

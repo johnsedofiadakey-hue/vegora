@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import HomeMotion from "@/components/storefront/home-motion";
+import { previewProducts } from "@/lib/preview-products";
 
 export default function HomePage() {
   return <div className="home-page">
@@ -40,9 +41,17 @@ export default function HomePage() {
       </div>
     </section>
 
+    <section className="home-arrivals" aria-labelledby="home-arrivals-heading">
+      <div className="home-arrivals-copy"><span className="eyebrow">02 / THE FIRST PIECES</span><h2 id="home-arrivals-heading">A closer<br /><em>look.</em></h2><p>Meet the first striped pieces in the VEGORA collection. Explore the details while final prices and availability are being prepared.</p><Link href="/men" className="line-link">View the preview collection <ArrowUpRight size={16} /></Link></div>
+      <div className="home-arrivals-images">
+        <div><Image src={previewProducts[0].images[0].url} alt={previewProducts[0].images[0].alt} fill sizes="(max-width: 767px) 50vw, 32vw" /></div>
+        <div><Image src={previewProducts[3].images[0].url} alt={previewProducts[3].images[0].alt} fill sizes="(max-width: 767px) 50vw, 32vw" /></div>
+      </div>
+    </section>
+
     <section className="editorial-callout" aria-labelledby="edit-heading">
       <div className="editorial-photo"><Image src="/editorial/ve-detail.png" alt="Close-up of black tailoring and a white shirt cuff" fill sizes="(max-width: 767px) 100vw, 55vw" /></div>
-      <div className="editorial-copy" data-reveal><span className="eyebrow">02 / THE EDIT</span><h2 id="edit-heading">A study in<br /><em>self-expression.</em></h2><p>Discover the mood behind VEGORA: strong silhouettes, quiet detail, and the freedom to dress on your own terms.</p><Link href="/the-edit" className="line-link">Explore the edit <ArrowUpRight size={16} /></Link></div>
+      <div className="editorial-copy" data-reveal><span className="eyebrow">03 / THE EDIT</span><h2 id="edit-heading">A study in<br /><em>self-expression.</em></h2><p>Discover the mood behind VEGORA: strong silhouettes, quiet detail, and the freedom to dress on your own terms.</p><Link href="/the-edit" className="line-link">Explore the edit <ArrowUpRight size={16} /></Link></div>
     </section>
 
     <section className="closing-statement section-pad"><span>VEGORA</span><h2>Elevate your style.</h2><Link href="/new-in" className="outline-button">Explore new in <ArrowUpRight size={17} /></Link></section>

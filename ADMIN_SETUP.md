@@ -28,6 +28,9 @@ Deploy `firestore.rules`, `storage.rules`, and `firestore.indexes.json` for the 
 - `GET /api/products/[slug]` returns `{ product }` for a published item; drafts and archived items return 404.
 - `GET/POST /api/admin/products` and `GET/PUT/DELETE /api/admin/products/[slug]` require a Firebase ID token with `admin: true`. DELETE archives the product. Slugs are immutable after creation.
 - `POST /api/admin/upload` accepts one JPEG, PNG, WebP, or AVIF file up to 8 MB and returns `{ url }`. Images are served at `/api/media/[assetId]`.
+- The admin form can select several files at once and uploads them through the protected endpoint one by one. A product can keep up to 12 images; the first is its cover image, and the form supports reordering and alt text. Existing `images` arrays stay compatible.
+- Standard and custom sizes can be added in the admin form. Every size has its own variant ID, SKU, and stock count. New sizes start at zero stock until an operator enters verified inventory. Existing `variants` arrays stay compatible.
+- The admin's **Import seven preview styles** action copies the seven supplied men's T-shirt styles into Firestore as editable drafts. The navy front and back photographs are one product. Each new draft has a GH₵100 test price, no sizes or stock, and is not published. Existing slugs are skipped without changes. The static `/catalog/` photos from this known preview list are accepted in product edits; other local paths and remote URLs are rejected. Once Firebase is available, review each draft and enter confirmed names, prices, sizes, and stock before publishing.
 - Prices use integer pesewas (`priceMinor`) and `currency: "GHS"`. A product may stay a draft with no price or image. Publishing requires a price, image, and at least one size variant.
 
 ## Checkout gate

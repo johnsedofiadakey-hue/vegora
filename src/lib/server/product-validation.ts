@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Audience, ProductImage, ProductInput, ProductStatus, ProductVariant } from "../catalog";
+import { previewProducts } from "../preview-products";
 import { HttpError } from "./http";
 
 function object(value: unknown): Record<string, unknown> {
@@ -20,6 +21,7 @@ function field(value: unknown, label: string, max: number, required = true): str
 }
 
 const mediaPath = /^\/api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp|avif)$/i;
+const approvedCatalogImages = new Set(previewProducts.flatMap((product) => product.images.map((image) => image.url)));
 
 export function parseProductInput(value: unknown): ProductInput {
   const input = object(value);
@@ -49,7 +51,9 @@ export function parseProductInput(value: unknown): ProductInput {
   const images: ProductImage[] = input.images.map((value) => {
     const image = object(value);
     const url = field(image.url, "Image URL", 150);
-    if (!mediaPath.test(url)) throw new HttpError(400, "Upload images through the admin first");
+    if (!mediaPath.test(url) && !(url.startsWith("/catalog/") && approvedCatalogImages.has(url))) {
+      throw new HttpError(400, "Upload images through the admin or use an approved catalog image");
+    }
     return { url, alt: field(image.alt, "Image description", 200) };
   });
   if (!Array.isArray(input.variants) || input.variants.length > 50) {
