@@ -85,13 +85,18 @@ try {
       }));
       await page.reload({ waitUntil: "domcontentloaded" });
       await page.getByRole("button", { name: "S", exact: true }).waitFor();
-      if (!(await page.locator(".add-bag-button").isDisabled())) throw new Error("Size selection was not required");
+      const mobileBuyButton = page.locator(".mobile-buy-bar button");
+      if (!(await mobileBuyButton.isVisible()) || (await mobileBuyButton.textContent())?.trim() !== "Select size") {
+        throw new Error("The phone buy bar did not ask for a size");
+      }
       if (!(await page.getByRole("button", { name: "M", exact: true }).isDisabled())) throw new Error("Out-of-stock size is selectable");
       await page.getByRole("button", { name: "S", exact: true }).click();
-      if (await page.locator(".add-bag-button").isDisabled()) throw new Error("In-stock size cannot be added");
-      await page.locator(".add-bag-button").click();
+      if ((await mobileBuyButton.textContent())?.trim() !== "Add to bag" || await mobileBuyButton.isDisabled()) {
+        throw new Error("In-stock size cannot be added from the phone buy bar");
+      }
+      await mobileBuyButton.click();
       await page.getByText("Added to your bag.").waitFor();
-      await page.locator('.header-actions a[aria-label="Shopping bag"]').click();
+      await page.locator(".mobile-buy-bar a").getByText("View bag").click();
       await page.waitForURL(`${baseUrl}/bag`);
       if (!(await page.getByRole("heading", { name: "Shopping bag" }).isVisible())) throw new Error("Bag navigation failed");
       await page.goto(`${baseUrl}/checkout`, { waitUntil: "domcontentloaded", timeout: 60000 });

@@ -34,7 +34,7 @@ Everything is done in the **Studio admin** at the website address followed by `/
 
 **Removing a product from sale:** open it and choose **Archive**. It disappears from the site but is kept in the system.
 
-**The seven preview styles** are already in the list as drafts. Replace the placeholder name, price, sizes and stock with the real ones before publishing.
+**The seven preview styles** appear on the public site as labelled previews. In Products, choose **Import seven preview styles** to copy them into the admin as editable drafts. If they are already listed, the import leaves them unchanged. Replace each placeholder name and price, then add confirmed sizes and stock before publishing.
 
 ## Content: the words and pictures on the site
 
@@ -106,5 +106,5 @@ These need your decisions. Your developer will do the technical side:
 ## Keeping the shop safe
 
 - The system keeps **7 days** of history behind the scenes. If something important is deleted by mistake, tell your developer straight away.
-- Your developer receives an email if the site stops answering or logs an error.
+- Site monitoring and email alerts are configured; ask your developer to confirm alert delivery if the site has a problem.
 - Never send your password or payment keys by message or email.
