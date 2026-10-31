@@ -35,6 +35,21 @@ Deploy `firestore.rules`, `storage.rules`, and `firestore.indexes.json` for the 
 - Admins can set `new_arrival` and `best_seller` tags in the product editor. New products default to New arrival; imported preview drafts carry that tag. `/new-in` filters by `new_arrival`, and product cards/detail pages show assigned tags. The two tag queries require the indexes in `firestore.indexes.json` to be deployed and ready.
 - Public catalog/search/detail routes show published products with a price, image, and at least one available unit. Women's navigation and the `/women` page appear only when such a women or unisex product exists; the availability endpoint is `/api/storefront/availability` and fails closed if catalog access is unavailable.
 
+## Site content (CMS) contract
+
+Editable site text lives in Firestore `siteContent/{block}` with one document per block: `announcement`, `home`, `edit`, `about`, `contact`, `delivery`, `returns`. Each holds a `draft`, a `published` copy, and a `version`; every publish also writes `siteContent/{block}/revisions/v{version}`. The field list, limits and built-in default text for each block are defined in `src/lib/site-content.ts`. A block that has never been published uses those defaults, so the storefront never depends on this data existing.
+
+All routes require an admin ID token. Saving a draft never changes the live site.
+
+- `GET /api/admin/content` lists every block with its fields, status (`default`, `draft`, `published`, `changed`), editor values and live values.
+- `GET /api/admin/content/[block]` returns one block and its last 20 published versions.
+- `PUT /api/admin/content/[block]` with `{ values, version }` saves a draft. Fields not sent keep their current value; unknown fields are rejected.
+- `POST /api/admin/content/[block]/publish` with `{ version }` makes the draft live, records a revision, and marks the cached content stale with `revalidateTag(..., { expire: 0 })` so the next visitor gets fresh text.
+- `POST /api/admin/content/[block]/discard` with `{ version }` drops unpublished changes.
+- `POST /api/admin/content/[block]/restore` with `{ revisionId, version }` loads an earlier published version into the draft. It goes live only when published.
+
+`version` must match the stored version, otherwise the request returns 409, so two editors cannot silently overwrite each other. Content is plain text: HTML tags and control characters are rejected, links must be a page on this site or an `https://` address, and images must be admin uploads or the approved `/editorial/` photographs, each with a description. The storefront does not read this content yet; the admin screen, page changes, preview and the contact, delivery and returns pages are later phases.
+
 ## Checkout gate
 
 For local key setup, copy `.env.example` to `.env.local`, paste only the Paystack **Test Secret Key** into `PAYSTACK_SECRET_KEY=`, then run `npm run check:paystack`. The check contacts Paystack and reports acceptance without printing the key. The hosted checkout does not need a browser public key. `.env.local` is Git-ignored. Keep checkout switches unset while delivery rules and the public test webhook are being prepared.
