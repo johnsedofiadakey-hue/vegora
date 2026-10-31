@@ -1,20 +1,24 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import HomeMotion from "@/components/storefront/home-motion";
-import { previewProducts } from "@/lib/preview-products";
+import { ContentImage } from "@/components/storefront/content-image";
 import { WomenOnly } from "@/components/storefront/collection-availability";
 import { HeroCompanionPortrait } from "@/components/storefront/hero-companion-portrait";
+import { defaultValues, type ImageValue } from "@/lib/site-content";
+import { getContent } from "@/lib/server/site-content-cache";
+import { featuredPieceImages } from "@/lib/server/featured-pieces";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const content = await getContent("home");
+  const pieces = await featuredPieceImages(content.arrivalsProducts, defaultValues("home").arrivalsProducts as string[]);
   return <div className="home-page">
     <HomeMotion />
     <section className="gallery-hero" aria-labelledby="hero-title">
-      <div className="hero-man"><Image src="/editorial/ve-man.png" alt="VEGORA editorial portrait of a man in black tailoring" fill priority loading="eager" sizes="(max-width: 767px) 50vw, 25vw" /></div>
+      <div className="hero-man"><ContentImage image={content.heroImage} fill priority loading="eager" sizes="(max-width: 767px) 50vw, 25vw" /></div>
       <div className="hero-copy">
-        <span className="eyebrow">VEGORA / A NEW PERSPECTIVE</span>
-        <h1 id="hero-title">The art<br />of dressing</h1>
-        <p>Style is personal. Make it yours.</p>
+        <span className="eyebrow">{content.heroEyebrow}</span>
+        <h1 id="hero-title">{content.heroLine1}<br />{content.heroLine2}</h1>
+        <p>{content.heroSubline}</p>
         <div className="hero-links"><Link href="/men">Explore men <ArrowUpRight size={16} /></Link><WomenOnly><Link href="/women">Explore women <ArrowUpRight size={16} /></Link></WomenOnly></div>
         <div className="hero-motion-mark" aria-hidden="true"><span className="hero-motion-ring" /><span className="hero-motion-core">V</span></div>
       </div>
@@ -24,39 +28,38 @@ export default function HomePage() {
 
     <div className="home-surface">
     <section className="home-intro section-pad" aria-label="VEGORA introduction">
-      <p>AN EXPRESSION OF YOU</p>
-      <h2 data-reveal>Considered style.<br /><em>Distinct presence.</em></h2>
-      <span>VEGORA explores the way we dress and the presence we bring to every room.</span>
+      <p>{content.introLabel}</p>
+      <h2 data-reveal>{content.introLead}<br /><em>{content.introEmphasis}</em></h2>
+      <span>{content.introBody}</span>
     </section>
 
     <section className="home-collections section-pad" aria-labelledby="collections-heading">
-      <div className="section-heading"><span>01 / EXPLORE</span><h2 id="collections-heading">The collections</h2></div>
+      <div className="section-heading"><span>{content.collectionsLabel}</span><h2 id="collections-heading">{content.collectionsHeading}</h2></div>
       <div className="collection-tiles">
         <Link href="/men" className="collection-tile" data-reveal>
-          <div className="tile-image tile-image-men"><Image src="/editorial/ve-man-coat.png" alt="Man in a black overcoat" fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
+          <div className="tile-image tile-image-men"><ContentImage image={content.menTileImage} fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
           <div className="tile-caption"><span>For him</span><strong>Men</strong><ArrowUpRight size={22} strokeWidth={1.3} /></div>
         </Link>
         <WomenOnly><Link href="/women" className="collection-tile" data-reveal>
-          <div className="tile-image tile-image-women"><Image src="/editorial/ve-woman-light.png" alt="Woman in white tailored jacket" fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
+          <div className="tile-image tile-image-women"><ContentImage image={content.womenTileImage} fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
           <div className="tile-caption"><span>For her</span><strong>Women</strong><ArrowUpRight size={22} strokeWidth={1.3} /></div>
         </Link></WomenOnly>
       </div>
     </section>
 
     <section className="home-arrivals" aria-labelledby="home-arrivals-heading">
-      <div className="home-arrivals-copy"><span className="eyebrow">02 / THE FIRST PIECES</span><h2 id="home-arrivals-heading">A closer<br /><em>look.</em></h2><p>Meet the first striped pieces in the VEGORA collection. Explore the details while final prices and availability are being prepared.</p><Link href="/men" className="line-link">View the preview collection <ArrowUpRight size={16} /></Link></div>
+      <div className="home-arrivals-copy"><span className="eyebrow">{content.arrivalsLabel}</span><h2 id="home-arrivals-heading">{content.arrivalsLead}<br /><em>{content.arrivalsEmphasis}</em></h2><p>{content.arrivalsBody}</p><Link href="/men" className="line-link">{`${content.arrivalsLinkLabel} `}<ArrowUpRight size={16} /></Link></div>
       <div className="home-arrivals-images">
-        <div><Image src={previewProducts[0].images[0].url} alt={previewProducts[0].images[0].alt} fill sizes="(max-width: 767px) 50vw, 32vw" /></div>
-        <div><Image src={previewProducts[3].images[0].url} alt={previewProducts[3].images[0].alt} fill sizes="(max-width: 767px) 50vw, 32vw" /></div>
+        {pieces.map((image: ImageValue) => <div key={image.url}><ContentImage image={image} fill sizes="(max-width: 767px) 50vw, 32vw" /></div>)}
       </div>
     </section>
 
     <section className="editorial-callout" aria-labelledby="edit-heading">
-      <div className="editorial-photo"><Image src="/editorial/ve-detail.png" alt="Close-up of black tailoring and a white shirt cuff" fill sizes="(max-width: 767px) 100vw, 55vw" /></div>
-      <div className="editorial-copy" data-reveal><span className="eyebrow">03 / THE EDIT</span><h2 id="edit-heading">A study in<br /><em>self-expression.</em></h2><p>Discover the mood behind VEGORA: strong silhouettes, quiet detail, and the freedom to dress on your own terms.</p><Link href="/the-edit" className="line-link">Explore the edit <ArrowUpRight size={16} /></Link></div>
+      <div className="editorial-photo"><ContentImage image={content.calloutImage} fill sizes="(max-width: 767px) 100vw, 55vw" /></div>
+      <div className="editorial-copy" data-reveal><span className="eyebrow">{content.calloutLabel}</span><h2 id="edit-heading">{content.calloutLead}<br /><em>{content.calloutEmphasis}</em></h2><p>{content.calloutBody}</p><Link href="/the-edit" className="line-link">{`${content.calloutLinkLabel} `}<ArrowUpRight size={16} /></Link></div>
     </section>
 
-    <section className="closing-statement section-pad"><span>VEGORA</span><h2>Elevate your style.</h2><Link href="/new-in" className="outline-button">Explore new in <ArrowUpRight size={17} /></Link></section>
+    <section className="closing-statement section-pad"><span>{content.closingLabel}</span><h2>{content.closingHeading}</h2><Link href="/new-in" className="outline-button">{`${content.closingButton} `}<ArrowUpRight size={17} /></Link></section>
     </div>
   </div>;
 }

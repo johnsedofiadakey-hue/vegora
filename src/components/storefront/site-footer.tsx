@@ -2,13 +2,15 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Wordmark } from "./wordmark";
 import { WomenOnly } from "./collection-availability";
+import { getContent } from "@/lib/server/site-content-cache";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const contact = await getContent("contact");
   return <footer className="site-footer">
     <div className="footer-top">
       <div>
         <Wordmark inverse className="footer-wordmark" />
-        <p>A considered point of view on dressing.</p>
+        <p>{contact.footerTagline}</p>
       </div>
       <div className="footer-links">
         <div><span>Explore</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>

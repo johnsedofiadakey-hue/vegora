@@ -452,9 +452,6 @@ export function policyIsLive(values: ContentValues): boolean {
   return typeof values.body === "string" && values.body.trim().length > 0;
 }
 
-export const contentCacheTag = "site-content";
-export function blockCacheTag(id: BlockId): string { return `${contentCacheTag}:${id}`; }
-
 /** A JSON-friendly description of every block, used by the admin form. */
 export function describeBlocks() {
   return blockIds.map((id) => ({

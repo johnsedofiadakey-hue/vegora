@@ -1,7 +1,6 @@
-import { revalidateTag } from "next/cache";
-import { blockCacheTag, contentCacheTag } from "@/lib/site-content";
 import { requireAdmin } from "@/lib/server/admin-auth";
 import { HttpError, jsonError, readJson } from "@/lib/server/http";
+import { forgetContent } from "@/lib/server/site-content-cache";
 import { publishBlock, requireBlockId } from "@/lib/server/site-content";
 
 export const runtime = "nodejs";
@@ -13,10 +12,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ blo
     const body = await readJson(request);
     if (!body || typeof body !== "object" || Array.isArray(body)) throw new HttpError(400, "Invalid request");
     const block = await publishBlock(id, (body as Record<string, unknown>).version, actorUid);
-    // { expire: 0 } makes the next visitor wait for fresh content instead of
-    // being served the old text while it refreshes in the background.
-    revalidateTag(contentCacheTag, { expire: 0 });
-    revalidateTag(blockCacheTag(id), { expire: 0 });
+    // The storefront renders per request and keeps a short in-process copy of
+    // each block. Drop it so this instance shows the new text immediately;
+    // other instances pick it up when their copy expires.
+    forgetContent(id);
     return Response.json({ block }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return jsonError(error);

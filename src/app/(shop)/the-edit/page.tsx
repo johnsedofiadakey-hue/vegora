@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { WomenOnly } from "@/components/storefront/collection-availability";
+import { ContentImage } from "@/components/storefront/content-image";
 import { EditCompanionPortrait } from "@/components/storefront/edit-companion-portrait";
+import { getContent } from "@/lib/server/site-content-cache";
 
 export const metadata: Metadata = { title: "The Edit" };
 
-export default function TheEditPage() {
+export default async function TheEditPage() {
+  const content = await getContent("edit");
   return <div className="editorial-page">
-    <header className="page-lead"><span className="eyebrow">VEGORA / THE EDIT</span><h1>The art of<br /><em>dressing.</em></h1><p>A visual expression of presence, individuality, and considered style.</p></header>
-    <div className="edit-images"><EditCompanionPortrait /><div><Image src="/editorial/ve-man-coat.png" alt="Man in a black overcoat" fill sizes="(max-width: 767px) 100vw, 50vw" /></div></div>
-    <section className="edit-copy"><span>AN EXPRESSION OF YOU</span><h2>Wear what feels<br /><em>like you.</em></h2><p>VEGORA is a space for personal style. Explore the collection as it comes to life.</p><div><Link className="line-link" href="/men">Explore men <ArrowUpRight size={16} /></Link><WomenOnly><Link className="line-link" href="/women">Explore women <ArrowUpRight size={16} /></Link></WomenOnly></div></section>
+    <header className="page-lead"><span className="eyebrow">{content.pageLabel}</span><h1>{content.leadLine1}<br /><em>{content.leadEmphasis}</em></h1><p>{content.leadBody}</p></header>
+    <div className="edit-images"><EditCompanionPortrait /><div><ContentImage image={content.image} fill sizes="(max-width: 767px) 100vw, 50vw" /></div></div>
+    <section className="edit-copy"><span>{content.copyLabel}</span><h2>{content.copyLead}<br /><em>{content.copyEmphasis}</em></h2><p>{content.copyBody}</p><div><Link className="line-link" href="/men">Explore men <ArrowUpRight size={16} /></Link><WomenOnly><Link className="line-link" href="/women">Explore women <ArrowUpRight size={16} /></Link></WomenOnly></div></section>
   </div>;
 }

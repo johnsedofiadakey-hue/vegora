@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { paragraphs } from "@/lib/site-content";
+import { getContent } from "@/lib/server/site-content-cache";
 
 export const metadata: Metadata = { title: "About" };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const content = await getContent("about");
   return <div className="about-page">
-    <span className="eyebrow">THE HOUSE / VEGORA</span>
-    <h1>Style is<br /><em>personal.</em></h1>
-    <p>VEGORA is a new destination for considered fashion. Our visual world is built on contrast, clarity, and the confidence of individual expression.</p>
-    <p>As the collection takes shape, this space will introduce the pieces, people, and ideas behind the brand.</p>
-    <Link href="/the-edit" className="line-link">Discover the edit <ArrowUpRight size={16} /></Link>
+    <span className="eyebrow">{content.label}</span>
+    <h1>{content.headingLead}<br /><em>{content.headingEmphasis}</em></h1>
+    {paragraphs(content.body).map((text) => <p key={text}>{text}</p>)}
+    <Link href="/the-edit" className="line-link">{`${content.linkLabel} `}<ArrowUpRight size={16} /></Link>
   </div>;
 }
