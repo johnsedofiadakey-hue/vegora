@@ -1,5 +1,6 @@
 export type ProductImage = { url: string; alt: string };
 export type ProductVariant = { id: string; sku: string; size: string; stock: number };
+export type ProductTag = "new_arrival" | "best_seller";
 
 export type Product = {
   id: string;
@@ -14,6 +15,7 @@ export type Product = {
   variants: ProductVariant[];
   status: "draft" | "published" | "archived";
   featured: boolean;
+  tags: ProductTag[];
   createdAt: string;
   updatedAt: string;
 };

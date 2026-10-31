@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
-import type { Product, ProductInput, ProductStatus, Audience } from "@/lib/catalog";
+import type { Product, ProductInput, ProductStatus, ProductTag, Audience } from "@/lib/catalog";
 import { formatGhs } from "@/lib/catalog";
 import { adminAuth } from "@/lib/admin-client";
 import { ProductAssetsEditor } from "./product-assets-editor";
 import styles from "./admin.module.css";
 
 const emptyProduct: ProductInput = {
-  slug: "", name: "", description: "", audience: "women", category: "",
-  priceMinor: null, currency: "GHS", images: [], variants: [], status: "draft", featured: false,
+  slug: "", name: "", description: "", audience: "men", category: "",
+  priceMinor: null, currency: "GHS", images: [], variants: [], status: "draft", featured: false, tags: ["new_arrival"],
 };
 
 interface AdminOrder {
@@ -178,6 +178,7 @@ export default function AdminPage() {
       priceMinor: product.priceMinor, currency: product.currency,
       images: product.images, variants: product.variants,
       status: product.status, featured: product.featured,
+      tags: product.tags ?? [],
     });
     setMessage(""); window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -203,6 +204,7 @@ export default function AdminPage() {
           <div className={styles.grid}><label>Collection<select value={editing.audience} onChange={(e) => setEditing({ ...editing, audience: e.target.value as Audience })}><option value="women">Women</option><option value="men">Men</option><option value="unisex">Unisex</option></select></label><label>Category<input value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} placeholder="Tailoring" required /></label></div>
           <div className={styles.grid}><label>Price (GHS)<input type="number" min="0" step="0.01" value={editing.priceMinor === null ? "" : (editing.priceMinor / 100).toFixed(2)} onChange={(e) => setEditing({ ...editing, priceMinor: e.target.value === "" ? null : Math.round(Number(e.target.value) * 100) })} placeholder="0.00" /></label><label>Status<select value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as ProductStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label></div>
           <label className={styles.checkbox}><input type="checkbox" checked={editing.featured} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} /> Feature on storefront</label>
+          <div className={styles.tagsField} role="group" aria-label="Product tags"><span>Product tags</span><div>{([ ["new_arrival", "New arrival"], ["best_seller", "Best seller"] ] as [ProductTag, string][]).map(([tag, label]) => <label key={tag} className={styles.checkbox}><input type="checkbox" checked={editing.tags.includes(tag)} onChange={(e) => setEditing({ ...editing, tags: e.target.checked ? [...editing.tags, tag] : editing.tags.filter((item) => item !== tag) })} /> {label}</label>)}</div><small>Tags appear on product cards. Only tagged pieces appear in New In.</small></div>
           <ProductAssetsEditor product={editing} onChange={setEditing} onUpload={uploadImages} busy={busy} />
           <div className={styles.actions}><button type="submit" disabled={busy}>{busy ? "Working…" : "Save product"}</button>{originalSlug && <button type="button" className={styles.archive} onClick={archive} disabled={busy}>Archive</button>}</div>
         </form>

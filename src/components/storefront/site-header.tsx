@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Wordmark } from "./wordmark";
+import { useWomenAvailable } from "./collection-availability";
 
 const nav = [
   { href: "/women", label: "Women" },
@@ -14,6 +15,7 @@ const nav = [
 ];
 
 export function SiteHeader() {
+  const womenAvailable = useWomenAvailable();
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,7 +43,7 @@ export function SiteHeader() {
           </button>
           <Wordmark className="header-wordmark" />
           <nav className="desktop-nav" aria-label="Main navigation">
-            {nav.map((item) => <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}
+            {nav.filter((item) => item.href !== "/women" || womenAvailable).map((item) => <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}
           </nav>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label={searchOpen ? "Close search" : "Search"} aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={22} strokeWidth={1.35} /></button>
@@ -55,7 +57,7 @@ export function SiteHeader() {
         </form>}
       </header>
       {menuOpen && <nav className="mobile-nav" aria-label="Mobile navigation">
-        {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
+        {nav.filter((item) => item.href !== "/women" || womenAvailable).map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
         <Link href="/about" onClick={() => setMenuOpen(false)}>About VEGORA</Link>
       </nav>}
     </>

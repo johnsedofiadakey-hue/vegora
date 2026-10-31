@@ -1,5 +1,6 @@
 export type Audience = "women" | "men" | "unisex";
 export type ProductStatus = "draft" | "published" | "archived";
+export type ProductTag = "new_arrival" | "best_seller";
 
 export interface ProductImage {
   url: string;
@@ -26,6 +27,7 @@ export interface Product {
   variants: ProductVariant[];
   status: ProductStatus;
   featured: boolean;
+  tags: ProductTag[];
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +44,7 @@ export interface ProductInput {
   variants: ProductVariant[];
   status: ProductStatus;
   featured: boolean;
+  tags: ProductTag[];
 }
 
 export function formatGhs(priceMinor: number | null): string {

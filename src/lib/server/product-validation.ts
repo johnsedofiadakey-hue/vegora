@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Audience, ProductImage, ProductInput, ProductStatus, ProductVariant } from "../catalog";
+import type { Audience, ProductImage, ProductInput, ProductStatus, ProductTag, ProductVariant } from "../catalog";
 import { previewProducts } from "../preview-products";
 import { HttpError } from "./http";
 
@@ -76,11 +76,18 @@ export function parseProductInput(value: unknown): ProductInput {
     throw new HttpError(400, "Variant IDs and SKUs must be unique within a product");
   }
   if (typeof input.featured !== "boolean") throw new HttpError(400, "Featured must be true or false");
+  const rawTags = input.tags ?? [];
+  if (!Array.isArray(rawTags) || rawTags.length > 2 ||
+      rawTags.some((tag) => tag !== "new_arrival" && tag !== "best_seller") ||
+      new Set(rawTags).size !== rawTags.length) {
+    throw new HttpError(400, "Choose valid product tags");
+  }
+  const tags = rawTags as ProductTag[];
   if (status === "published" && (priceMinor === null || images.length === 0 || variants.length === 0)) {
     throw new HttpError(400, "Published products need a price, image and size variant");
   }
   return {
     slug, name, description, audience, category, priceMinor: priceMinor as number | null,
-    currency: "GHS", images, variants, status, featured: input.featured,
+    currency: "GHS", images, variants, status, featured: input.featured, tags,
   };
 }

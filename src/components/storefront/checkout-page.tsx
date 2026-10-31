@@ -87,7 +87,7 @@ export function CheckoutPage() {
     <Link className="checkout-back" href="/bag"><ArrowLeft size={15} /> Back to bag</Link>
     <span className="eyebrow">VEGORA / PRIVATE CHECKOUT</span>
     <h1>Complete your order</h1>
-    {loading ? <p className="checkout-state">Preparing checkout…</p> : !available ? <div className="checkout-state"><h2>Checkout is being prepared.</h2><p>We will open online orders once payment and delivery are configured.</p><Link className="line-link" href="/bag">Return to your bag <ArrowUpRight size={16} /></Link></div> : !items.length ? <div className="checkout-state"><h2>Your bag is empty.</h2><Link className="line-link" href="/women">Explore the collection <ArrowUpRight size={16} /></Link></div> :
+    {loading ? <p className="checkout-state">Preparing checkout…</p> : !available ? <div className="checkout-state"><h2>Checkout is being prepared.</h2><p>We will open online orders once payment and delivery are configured.</p><Link className="line-link" href="/bag">Return to your bag <ArrowUpRight size={16} /></Link></div> : !items.length ? <div className="checkout-state"><h2>Your bag is empty.</h2><Link className="line-link" href="/men">Explore the collection <ArrowUpRight size={16} /></Link></div> :
       <div className="checkout-layout">
         <form id="checkout-form" className="checkout-form" onSubmit={submit}>
           <fieldset><legend>01 / Contact</legend>

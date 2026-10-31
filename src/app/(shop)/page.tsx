@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import HomeMotion from "@/components/storefront/home-motion";
 import { previewProducts } from "@/lib/preview-products";
+import { WomenOnly } from "@/components/storefront/collection-availability";
+import { HeroCompanionPortrait } from "@/components/storefront/hero-companion-portrait";
 
 export default function HomePage() {
   return <div className="home-page">
@@ -13,10 +15,10 @@ export default function HomePage() {
         <span className="eyebrow">VEGORA / A NEW PERSPECTIVE</span>
         <h1 id="hero-title">The art<br />of dressing</h1>
         <p>Style is personal. Make it yours.</p>
-        <div className="hero-links"><Link href="/women">Explore women <ArrowUpRight size={16} /></Link><Link href="/men">Explore men <ArrowUpRight size={16} /></Link></div>
+        <div className="hero-links"><Link href="/men">Explore men <ArrowUpRight size={16} /></Link><WomenOnly><Link href="/women">Explore women <ArrowUpRight size={16} /></Link></WomenOnly></div>
         <div className="hero-motion-mark" aria-hidden="true"><span className="hero-motion-ring" /><span className="hero-motion-core">V</span></div>
       </div>
-      <div className="hero-woman"><Image src="/editorial/ve-woman.png" alt="VEGORA editorial portrait of a woman in black tailoring" fill priority loading="eager" sizes="(max-width: 767px) 50vw, 43vw" /></div>
+      <HeroCompanionPortrait />
       <div className="hero-scroll-cue" aria-hidden="true"><span>SCROLL TO EXPLORE</span><i /></div>
     </section>
 
@@ -30,14 +32,14 @@ export default function HomePage() {
     <section className="home-collections section-pad" aria-labelledby="collections-heading">
       <div className="section-heading"><span>01 / EXPLORE</span><h2 id="collections-heading">The collections</h2></div>
       <div className="collection-tiles">
-        <Link href="/women" className="collection-tile" data-reveal>
-          <div className="tile-image tile-image-women"><Image src="/editorial/ve-woman-light.png" alt="Woman in white tailored jacket" fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
-          <div className="tile-caption"><span>For her</span><strong>Women</strong><ArrowUpRight size={22} strokeWidth={1.3} /></div>
-        </Link>
         <Link href="/men" className="collection-tile" data-reveal>
           <div className="tile-image tile-image-men"><Image src="/editorial/ve-man-coat.png" alt="Man in a black overcoat" fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
           <div className="tile-caption"><span>For him</span><strong>Men</strong><ArrowUpRight size={22} strokeWidth={1.3} /></div>
         </Link>
+        <WomenOnly><Link href="/women" className="collection-tile" data-reveal>
+          <div className="tile-image tile-image-women"><Image src="/editorial/ve-woman-light.png" alt="Woman in white tailored jacket" fill sizes="(max-width: 767px) 100vw, 50vw" /></div>
+          <div className="tile-caption"><span>For her</span><strong>Women</strong><ArrowUpRight size={22} strokeWidth={1.3} /></div>
+        </Link></WomenOnly>
       </div>
     </section>
 

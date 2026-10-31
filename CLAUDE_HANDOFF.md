@@ -60,3 +60,9 @@ Take VEGORA from its current visual preview to a working, tested Ghana ecommerce
 ## Report back to the owner
 
 Give a short status for each phase: implemented, locally tested, hosted verified, or blocked. Include the exact remaining owner decisions and any access/configuration problem. Distinguish preview visuals, draft catalog, test checkout, and live commerce. Never describe this as launch-ready while a catalog API fails, checkout is closed, or real inventory and delivery rules remain unconfirmed.
+
+## Client direction added 31 October 2026
+
+The client wants the public store to lead with men's wear until women’s products have real stock. The storefront now hides women's entry points until a published women or unisex product has price, image, and available stock; once one exists, links and imagery appear automatically. The product editor now supports New arrival and Best seller tags; all seven supplied styles are New arrival previews. Keep the women stock rule and tags intact as the catalog work continues.
+
+The client also expects a fuller admin comparable to other ecommerce sites: reliable product adding/editing, operational order management, editable site content, order ID, and customer delivery tracking. The current admin has Products and a **read-only** Orders tab. The `VG-…` value is an order/payment reference, not a carrier tracking code. There is no CMS, fulfillment action, tracking number, or customer tracking page. Add these as explicit work items, with authorization and status-transition rules. Choose manual status/tracking-reference entry or a courier integration with the owner; do not imply courier tracking exists until integrated and verified. The live catalog endpoint returned **200 with an empty published catalog** on 31 October; `/api/checkout/zones` still returned **503**. Earlier 500/503 results above are historical and must not be repeated as current status.

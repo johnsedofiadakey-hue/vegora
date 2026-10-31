@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Wordmark } from "./wordmark";
+import { WomenOnly } from "./collection-availability";
 
 export function SiteFooter() {
   return <footer className="site-footer">
@@ -10,7 +11,7 @@ export function SiteFooter() {
         <p>A considered point of view on dressing.</p>
       </div>
       <div className="footer-links">
-        <div><span>Explore</span><Link href="/women">Women</Link><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>
+        <div><span>Explore</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>
         <div><span>VEGORA</span><Link href="/about">Our Story</Link><Link href="/bag">Shopping Bag</Link></div>
       </div>
     </div>

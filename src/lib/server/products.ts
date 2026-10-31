@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Audience, Product, ProductInput, ProductVariant } from "../catalog";
+import type { Audience, Product, ProductInput, ProductTag, ProductVariant } from "../catalog";
 import { storeDb } from "./firebase-admin";
 import { HttpError } from "./http";
 
@@ -13,7 +13,7 @@ export interface StoredProduct extends Omit<Product, "variants"> { variants: Sto
 export function readStoredProduct(data: FirebaseFirestore.DocumentData | undefined): StoredProduct | null {
   if (!data) return null;
   const product = data as Product;
-  return { ...product, variants: product.variants.map((variant) => ({
+  return { ...product, tags: Array.isArray(product.tags) ? product.tags : [], variants: product.variants.map((variant) => ({
     ...variant,
     reserved: Number((variant as StoredVariant).reserved ?? 0),
   })) };
@@ -26,11 +26,33 @@ function exposeProduct(record: StoredProduct, admin: boolean): Product {
   })) };
 }
 
+function isAvailable(record: StoredProduct): boolean {
+  return record.priceMinor !== null && record.images.length > 0 &&
+    record.variants.some((variant) => variant.stock - variant.reserved > 0);
+}
+
+async function listAvailable(query: FirebaseFirestore.Query, limit: number): Promise<Product[]> {
+  const visible: Product[] = [];
+  const pageSize = Math.min(100, Math.max(limit, 24));
+  let page = query.orderBy("updatedAt", "desc").limit(pageSize);
+  while (visible.length < limit) {
+    const snap = await page.get();
+    for (const doc of snap.docs) {
+      const record = readStoredProduct(doc.data());
+      if (record && isAvailable(record)) visible.push(exposeProduct(record, false));
+      if (visible.length === limit) break;
+    }
+    if (snap.size < pageSize || visible.length === limit) break;
+    page = page.startAfter(snap.docs[snap.docs.length - 1]);
+  }
+  return visible;
+}
+
 export async function getPublishedProduct(slug: string): Promise<Product | null> {
   if (!validSlug(slug)) return null;
   const snap = await products().doc(slug).get();
   const data = readStoredProduct(snap.data());
-  return data?.status === "published" ? exposeProduct(data, false) : null;
+  return data?.status === "published" && isAvailable(data) ? exposeProduct(data, false) : null;
 }
 
 export async function listPublishedProducts(audience: Audience | null, limit: number): Promise<Product[]> {
@@ -40,8 +62,32 @@ export async function listPublishedProducts(audience: Audience | null, limit: nu
   } else if (audience === "unisex") {
     query = query.where("audience", "==", "unisex");
   }
-  const snap = await query.orderBy("updatedAt", "desc").limit(limit).get();
-  return snap.docs.map((doc) => exposeProduct(readStoredProduct(doc.data())!, false));
+  return listAvailable(query, limit);
+}
+
+export async function listTaggedProducts(tag: ProductTag, audience: Audience | null, limit: number): Promise<Product[]> {
+  let query = products().where("status", "==", "published").where("tags", "array-contains", tag);
+  if (audience === "women" || audience === "men") {
+    query = query.where("audience", "in", [audience, "unisex"]);
+  } else if (audience === "unisex") {
+    query = query.where("audience", "==", "unisex");
+  }
+  return listAvailable(query, limit);
+}
+
+export async function hasAvailableProductsForAudience(audience: "women" | "men"): Promise<boolean> {
+  let query = products().where("status", "==", "published")
+    .where("audience", "in", [audience, "unisex"])
+    .orderBy("updatedAt", "desc").select("priceMinor", "images", "variants").limit(100);
+  while (true) {
+    const snap = await query.get();
+    if (snap.docs.some((doc) => {
+      const product = readStoredProduct(doc.data());
+      return product && isAvailable(product);
+    })) return true;
+    if (snap.size < 100) return false;
+    query = query.startAfter(snap.docs[snap.docs.length - 1]);
+  }
 }
 
 export async function searchPublishedProducts(query: string, audience: Audience | null, limit: number): Promise<Product[]> {
@@ -49,6 +95,7 @@ export async function searchPublishedProducts(query: string, audience: Audience 
   if (snap.size === 500) throw new HttpError(503, "Search needs a larger catalog index. Please browse collections for now");
   const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
   return snap.docs.map((doc) => exposeProduct(readStoredProduct(doc.data())!, false))
+    .filter((product) => product.priceMinor !== null && product.images.length > 0 && product.variants.some((variant) => variant.stock > 0))
     .filter((product) => !audience || product.audience === audience || (audience !== "unisex" && product.audience === "unisex"))
     .filter((product) => {
       const haystack = [product.name, product.category, product.description, product.slug].join(" ").toLocaleLowerCase();

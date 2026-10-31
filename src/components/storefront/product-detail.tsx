@@ -19,6 +19,7 @@ function previewRecord(slug: string): Product | null {
     variants: [],
     status: "draft",
     featured: false,
+    tags: ["new_arrival"],
     createdAt: "",
     updatedAt: "",
   };
@@ -60,7 +61,7 @@ export function ProductDetail({ slug }: { slug: string }) {
       <div className="product-main-image">{product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt || product.name} width={800} height={1000} unoptimized /> : <span>VEGORA</span>}</div>
       {product.images.length > 1 && <div className="product-thumbnails" aria-label="Product images">{product.images.map((image, index) => <button key={`${image.url}-${index}`} type="button" aria-label={`Show image ${index + 1}`} aria-pressed={activeImage === index} onClick={() => setActiveImage(index)}><Image src={image.url} alt="" width={80} height={100} unoptimized /></button>)}</div>}
     </div>
-    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to collection</Link><span className="eyebrow">VEGORA / {product.category}</span><h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
+    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to collection</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
       {isPreview ? <div className="product-preview-notice"><span>Collection preview</span><p>This piece is in preview. The displayed price is for testing only. Final price and available sizes will be confirmed before ordering opens.</p></div> : <>
         <fieldset className="size-picker"><legend>Select size</legend><div>{product.variants.map((variant) => <button key={variant.id} type="button" disabled={variant.stock < 1} aria-pressed={variantId === variant.id} onClick={() => { setVariantId(variant.id); setQuantity(1); setFeedback(""); }}>{variant.size}</button>)}</div></fieldset>
         <p className="stock-note">{!product.variants.length ? "Sizes will be added soon" : !hasAvailableSize ? "Currently unavailable" : !chosenVariant ? "Choose a size to continue" : `${chosenVariant.stock} available in this size`}</p>

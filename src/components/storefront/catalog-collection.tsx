@@ -6,10 +6,11 @@ import { Product } from "./catalog-types";
 import { ProductCard } from "./product-card";
 import { previewProducts } from "@/lib/preview-products";
 import { PreviewProductCard } from "./preview-product-card";
+import { WomenOnly } from "./collection-availability";
 
-type CatalogCollectionProps = { audience?: "women" | "men"; query?: string };
+type CatalogCollectionProps = { audience?: "women" | "men"; query?: string; tag?: "new_arrival" | "best_seller" };
 
-export function CatalogCollection({ audience, query }: CatalogCollectionProps) {
+export function CatalogCollection({ audience, query, tag }: CatalogCollectionProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
 
@@ -18,6 +19,7 @@ export function CatalogCollection({ audience, query }: CatalogCollectionProps) {
     const params = new URLSearchParams({ limit: "48" });
     if (audience) params.set("audience", audience);
     if (query) params.set("q", query);
+    if (tag) params.set("tag", tag);
     fetch(`/api/products?${params}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Catalog ${response.status}`);
@@ -26,11 +28,12 @@ export function CatalogCollection({ audience, query }: CatalogCollectionProps) {
       .then((data) => { setProducts(data.products || []); setState("ready"); })
       .catch((error: unknown) => { if ((error as Error).name !== "AbortError") setState("unavailable"); });
     return () => controller.abort();
-  }, [audience, query]);
+  }, [audience, query, tag]);
 
   const previewMatches = previewProducts.filter((product) => {
     if (audience && product.audience !== audience) return false;
     if (state === "ready" && products.some((published) => published.slug === product.slug)) return false;
+    if (tag && tag !== "new_arrival") return false;
     if (!query) return true;
     const search = `${product.name} ${product.category} ${product.description}`.toLocaleLowerCase();
     return query.toLocaleLowerCase().split(/\s+/).filter(Boolean).every((word) => search.includes(word));
@@ -44,6 +47,6 @@ export function CatalogCollection({ audience, query }: CatalogCollectionProps) {
     </section>}
     {state === "loading" && !previewMatches.length && <div className="catalog-message" role="status">Loading the collection…</div>}
     {state === "unavailable" && !previewMatches.length && <div className="catalog-message" role="status"><span>THE COLLECTION</span><h2>Something beautiful is taking shape.</h2><p>VEGORA&apos;s online collection is being prepared. Explore the edit in the meantime.</p><Link href="/the-edit" className="line-link">View the edit →</Link></div>}
-    {state === "ready" && !products.length && !previewMatches.length && <div className="catalog-message" role="status"><span>THE COLLECTION</span><h2>{query ? "No matching pieces yet." : "The collection is coming."}</h2><p>{query ? "Try another search or explore the women’s and men’s collections." : "We’ll reveal pieces here as the VEGORA collection is ready."}</p><div><Link href="/women" className="line-link">Women →</Link><Link href="/men" className="line-link">Men →</Link></div></div>}
+    {state === "ready" && !products.length && !previewMatches.length && <div className="catalog-message" role="status"><span>THE COLLECTION</span><h2>{query ? "No matching pieces yet." : "The collection is coming."}</h2><p>{query ? "Try another search or explore the collection." : "We’ll reveal pieces here as the VEGORA collection is ready."}</p><div><Link href="/men" className="line-link">Men →</Link><WomenOnly><Link href="/women" className="line-link">Women →</Link></WomenOnly></div></div>}
   </>;
 }

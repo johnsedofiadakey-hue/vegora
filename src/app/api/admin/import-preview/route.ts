@@ -28,6 +28,7 @@ export async function POST(request: Request) {
         variants: [],
         status: "draft",
         featured: false,
+        tags: ["new_arrival"],
       });
       try {
         await createProduct(input);

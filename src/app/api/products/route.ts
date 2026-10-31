@@ -1,6 +1,6 @@
 import { jsonError } from "@/lib/server/http";
-import { listPublishedProducts, searchPublishedProducts } from "@/lib/server/products";
-import type { Audience } from "@/lib/catalog";
+import { listPublishedProducts, listTaggedProducts, searchPublishedProducts } from "@/lib/server/products";
+import type { Audience, ProductTag } from "@/lib/catalog";
 
 export const runtime = "nodejs";
 
@@ -17,9 +17,15 @@ export async function GET(request: Request) {
     }
     const q = (url.searchParams.get("q") ?? "").trim();
     if (q.length > 100) return Response.json({ error: "Search is too long" }, { status: 400 });
+    const tag = url.searchParams.get("tag");
+    if (tag && tag !== "new_arrival" && tag !== "best_seller") {
+      return Response.json({ error: "Invalid tag" }, { status: 400 });
+    }
+    if (q && tag) return Response.json({ error: "Search and tag cannot be combined" }, { status: 400 });
     const products = q
       ? await searchPublishedProducts(q, audience as Audience | null, requested)
-      : await listPublishedProducts(audience as Audience | null, requested);
+      : tag ? await listTaggedProducts(tag as ProductTag, audience as Audience | null, requested)
+        : await listPublishedProducts(audience as Audience | null, requested);
     return Response.json({ products }, { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } });
   } catch (error) {
     return jsonError(error);

@@ -7,6 +7,7 @@ export function ProductCard({ product }: { product: Product }) {
   return <Link href={`/product/${encodeURIComponent(product.slug)}`} className="product-card">
     <div className="product-card-image">
       {image ? <Image src={image.url} alt={image.alt || product.name} width={600} height={800} unoptimized /> : <span>VEGORA</span>}
+      {!!product.tags?.length && <div className="product-card-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}
     </div>
     <div className="product-card-meta"><div><span>{product.category}</span><h3>{product.name}</h3></div><strong>{formatMoney(product.priceMinor, product.currency)}</strong></div>
   </Link>;
