@@ -35,7 +35,10 @@ export function CheckoutReturnPage() {
         const data = await response.json() as { status?: OrderStatus };
         if (!data.status || !["initializing", "pending_payment", "paid", "failed", "expired", "review_required"].includes(data.status)) throw new Error("Verification unavailable");
         setStatus(data.status);
-        if (data.status === "paid") clearPaidSelection(ref);
+        if (data.status === "paid") {
+          clearPaidSelection(ref);
+          try { window.sessionStorage.setItem("vegora-last-order-reference", ref); } catch { /* Manual entry remains available. */ }
+        }
       })
       .catch((error) => { if (error.name !== "AbortError") setStatus("error"); });
     return () => { window.clearTimeout(timer); controller.abort(); };
@@ -52,6 +55,7 @@ export function CheckoutReturnPage() {
   }[status];
   return <div className="checkout-return section-pad"><span className="eyebrow">VEGORA / ORDER STATUS</span><h1>{copy[0]}</h1><p>{copy[1]}</p>{reference && <p className="checkout-reference">Reference <strong>{reference}</strong></p>}
     {(status === "pending_payment" || status === "initializing") && <button type="button" className="outline-button" onClick={() => window.location.reload()}>Check again</button>}
+    {status === "paid" && <Link href="/track" className="line-link">Track your order <ArrowUpRight size={16} /></Link>}
     {status !== "checking" && <Link href={status === "paid" ? "/" : "/bag"} className="line-link">{status === "paid" ? "Return home" : "Return to bag"} <ArrowUpRight size={16} /></Link>}
   </div>;
 }

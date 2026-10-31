@@ -33,7 +33,7 @@ The shopping bag works locally in the browser. A **test-mode checkout foundation
 
 See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the checkout request contract, exact environment gates, webhook and scheduler setup, and test checklist. No server Firebase key or Paystack key has been deployed. The current code rejects live Paystack keys. A live release needs successful test-mode reconciliation plus owner-approved delivery, fulfilment, returns, tax, and customer service rules.
 
-An order receives a `VG-…` reference after checkout initialization. The admin can read order details, but there are no fulfillment actions, carrier tracking numbers, customer delivery-tracking page, or editable site-content/CMS area yet. These must be designed and verified before presenting the admin as an operations dashboard.
+An order receives a `VG-…` reference after checkout initialization. A manual delivery workflow is implemented in code: after payment is verified, an admin can advance an order through preparing, dispatched, and delivered, enter a delivery provider and tracking reference before dispatch, and correct one step before delivery is final. Internal notes stay in the admin timeline. Customers can look up progress at `/track` with the order reference and matching email; the public response excludes customer addresses and internal notes. This flow still needs a real signed-in admin and synthetic paid-order verification before it is described as operational. There is no courier integration, order email notification, refund/cancellation workflow, or editable site-content/CMS area yet.
 
 ## Visual assets
 

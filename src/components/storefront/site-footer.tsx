@@ -12,7 +12,7 @@ export function SiteFooter() {
       </div>
       <div className="footer-links">
         <div><span>Explore</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>
-        <div><span>VEGORA</span><Link href="/about">Our Story</Link><Link href="/bag">Shopping Bag</Link></div>
+        <div><span>VEGORA</span><Link href="/about">Our Story</Link><Link href="/bag">Shopping Bag</Link><Link href="/track">Track order</Link></div>
       </div>
     </div>
     <div className="footer-bottom"><span>© {new Date().getFullYear()} VEGORA</span><span>Elevate Your Style</span><Link className="footer-admin-link" href="/admin">Admin portal <ArrowUpRight size={13} aria-hidden="true" /></Link></div>

@@ -10,6 +10,9 @@ import type { PaystackVerification } from "./paystack";
 import { paymentAction, type OrderStatus } from "./payment-policy";
 import { paymentConfig } from "./checkout-config";
 import { verifyPaystack } from "./paystack";
+import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput,
+  type Fulfillment, type FulfillmentEvent, type FulfillmentEventKind, type FulfillmentInput,
+  type FulfillmentStatus } from "../fulfillment";
 
 export type { OrderStatus } from "./payment-policy";
 
@@ -40,6 +43,7 @@ export interface Order {
   reservationExpiresAt: string;
   paymentStatus: string | null;
   paidAt: string | null;
+  fulfillment?: Fulfillment;
 }
 
 function boundedText(value: unknown, name: string, max: number, required = true): string {
@@ -166,7 +170,8 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
       delivery: { ...input.delivery, zoneLabel: zone.label, feeMinor: zone.feeMinor },
       lines, subtotalMinor, deliveryFeeMinor: zone.feeMinor, totalMinor, currency: "GHS",
       authorizationUrl: null, createdAt: now.toISOString(), updatedAt: now.toISOString(),
-      reservationExpiresAt: expiresAt, paymentStatus: null, paidAt: null };
+      reservationExpiresAt: expiresAt, paymentStatus: null, paidAt: null,
+      fulfillment: { ...emptyFulfillment } };
     for (const [slug, record] of records) tx.set(storeDb().collection("products").doc(slug), record);
     tx.create(orderRef(reference), order);
     tx.create(keyRef, { reference, fingerprint, createdAt: now.toISOString() });
@@ -234,6 +239,53 @@ export async function listAdminOrders(): Promise<Order[]> {
   const snap = await storeDb().collection("orders").orderBy("createdAt", "desc").limit(201).get();
   if (snap.size > 200) throw new HttpError(503, "Order admin needs pagination before processing more orders");
   return snap.docs.map((doc) => doc.data() as Order);
+}
+
+export async function updateOrderFulfillment(reference: string, value: unknown, actorUid: string): Promise<Order> {
+  if (!/^VG-[0-9a-f]{32}$/.test(reference)) throw new HttpError(404, "Order not found");
+  let input: FulfillmentInput;
+  try {
+    input = parseFulfillmentInput(value);
+  } catch (error) {
+    if (error instanceof FulfillmentInputError) throw new HttpError(400, error.message);
+    throw error;
+  }
+  const { status, note } = input;
+  const nextProvider = input.provider || null;
+  const nextReference = input.trackingReference || null;
+  const ref = orderRef(reference);
+  return storeDb().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const order = snap.data() as Order | undefined;
+    if (!order) throw new HttpError(404, "Order not found");
+    const current = order.fulfillment ?? emptyFulfillment;
+    const kind = fulfillmentTransition(order.status, current.status, status);
+    if (!kind) {
+      throw new HttpError(409, "Delivery can change only after verified payment, one step at a time, and never after it is delivered");
+    }
+    const unchanged = current.status === status && current.provider === nextProvider &&
+      current.trackingReference === nextReference;
+    if (unchanged && !note) return order;
+    const now = new Date().toISOString();
+    const fulfillment: Fulfillment = { status, provider: nextProvider, trackingReference: nextReference, updatedAt: now };
+    const next: Order = { ...order, fulfillment, updatedAt: now };
+    tx.set(ref, next);
+    tx.create(ref.collection("fulfillmentEvents").doc(), {
+      status, provider: nextProvider, trackingReference: nextReference, at: now, kind, note: note || null, actorUid,
+    });
+    return next;
+  });
+}
+
+export async function listFulfillmentEvents(reference: string): Promise<FulfillmentEvent[]> {
+  if (!/^VG-[0-9a-f]{32}$/.test(reference)) return [];
+  const snap = await orderRef(reference).collection("fulfillmentEvents").orderBy("at", "desc").limit(50).get();
+  return snap.docs.map((doc) => {
+    const event = doc.data();
+    return { status: event.status as FulfillmentStatus, provider: event.provider ?? null,
+      trackingReference: event.trackingReference ?? null, at: String(event.at),
+      kind: (event.kind as FulfillmentEventKind | undefined) ?? "advance", note: event.note ?? null };
+  }).reverse();
 }
 
 export async function reconcilePayment(verification: PaystackVerification): Promise<Order | null> {
