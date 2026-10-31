@@ -51,6 +51,10 @@ function defineBlock<F extends Record<string, Field>>(spec: BlockSpec<F>): Block
   return spec;
 }
 
+/** Photograph uploads accepted by the admin, matching /api/admin/upload. */
+export const maxUploadBytes = 8 * 1024 * 1024;
+export const uploadMimeTypes: readonly string[] = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
 export const approvedEditorialImages: readonly string[] = [
   "/editorial/ve-man.png",
   "/editorial/ve-man-coat.png",
