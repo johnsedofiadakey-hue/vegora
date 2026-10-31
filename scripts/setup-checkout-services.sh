@@ -27,7 +27,9 @@ say "1/3  Cron secret"
 if gcloud secrets describe "$SECRET" --project "$PROJECT" >/dev/null 2>&1; then
   echo "$SECRET already exists. Leaving it as it is."
 else
-  openssl rand -hex 32 | firebase apphosting:secrets:set "$SECRET" \
+  # tr removes the newline openssl adds; a stored newline would make the secret differ
+  # from the token the scheduler sends.
+  openssl rand -hex 32 | tr -d '\n' | firebase apphosting:secrets:set "$SECRET" \
     --project "$PROJECT" --data-file - --force
   echo "Created $SECRET."
 fi

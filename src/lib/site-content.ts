@@ -163,6 +163,22 @@ export const blocks = {
       body: { kind: "paragraph", label: "Text", max: 8000, default: "", help: "Separate paragraphs with a blank line." },
     },
   }),
+  privacy: defineBlock({
+    label: "Privacy policy",
+    description: "How customer details are used. It stays hidden until you publish text. Use wording the owner or their adviser has approved.",
+    fields: {
+      title: { kind: "text", label: "Page title", max: 80, required: true, default: "Privacy policy" },
+      body: { kind: "paragraph", label: "Text", max: 12000, default: "", help: "Separate paragraphs with a blank line." },
+    },
+  }),
+  terms: defineBlock({
+    label: "Terms of sale",
+    description: "The terms customers accept when they order. It stays hidden until you publish text. Use wording the owner or their adviser has approved.",
+    fields: {
+      title: { kind: "text", label: "Page title", max: 80, required: true, default: "Terms of sale" },
+      body: { kind: "paragraph", label: "Text", max: 12000, default: "", help: "Separate paragraphs with a blank line." },
+    },
+  }),
 };
 
 export type BlockId = keyof typeof blocks;

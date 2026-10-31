@@ -1,3 +1,4 @@
+import { AnnouncementBar } from "@/components/storefront/announcement-bar";
 import { SiteHeader } from "@/components/storefront/site-header";
 import { SiteFooter } from "@/components/storefront/site-footer";
 import { CollectionAvailabilityProvider } from "@/components/storefront/collection-availability";
@@ -7,5 +8,5 @@ import { CollectionAvailabilityProvider } from "@/components/storefront/collecti
 export const dynamic = "force-dynamic";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
-  return <CollectionAvailabilityProvider><SiteHeader /><main id="main-content">{children}</main><SiteFooter /></CollectionAvailabilityProvider>;
+  return <CollectionAvailabilityProvider><AnnouncementBar /><SiteHeader /><main id="main-content">{children}</main><SiteFooter /></CollectionAvailabilityProvider>;
 }

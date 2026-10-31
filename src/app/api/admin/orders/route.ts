@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   try {
     await requireAdmin(request);
-    const orders = await listAdminOrders();
-    return Response.json({ orders }, { headers: { "Cache-Control": "no-store" } });
+    const { orders, truncated } = await listAdminOrders();
+    return Response.json({ orders, truncated }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return jsonError(error);
   }

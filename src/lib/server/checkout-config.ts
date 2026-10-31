@@ -17,7 +17,7 @@ export interface CheckoutConfig {
 }
 
 export function paymentConfig(): { secretKey: string } {
-  const secretKey = process.env.PAYSTACK_SECRET_KEY ?? "";
+  const secretKey = (process.env.PAYSTACK_SECRET_KEY ?? "").trim();
   if (!secretKey.startsWith("sk_test_") || secretKey.length < 20) {
     throw new ServerConfigError("Test payment verification is not configured");
   }
@@ -31,7 +31,7 @@ export function checkoutConfig(): CheckoutConfig {
   if (process.env.VEGORA_CHECKOUT_ENABLED !== "true" ||
       process.env.VEGORA_WEBHOOK_CONFIRMED !== "true" ||
       process.env.VEGORA_EXPIRY_JOB_CONFIRMED !== "true" ||
-      (process.env.VEGORA_CRON_SECRET ?? "").length < 32 || !siteUrl || !rawZones) {
+      (process.env.VEGORA_CRON_SECRET ?? "").trim().length < 32 || !siteUrl || !rawZones) {
     throw new ServerConfigError("Test checkout is not configured");
   }
   let url: URL;

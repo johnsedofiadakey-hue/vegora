@@ -6,7 +6,8 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const expected = process.env.VEGORA_CRON_SECRET ?? "";
+    // Trimmed because a secret saved with a trailing newline is an easy mistake to make.
+    const expected = (process.env.VEGORA_CRON_SECRET ?? "").trim();
     const provided = request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
     const expectedBytes = Buffer.from(expected);
     const providedBytes = Buffer.from(provided);

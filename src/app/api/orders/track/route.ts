@@ -1,11 +1,20 @@
 import { FulfillmentInputError, parseTrackingLookup, publicTrackingView } from "@/lib/fulfillment";
 import { HttpError, jsonError, readJson } from "@/lib/server/http";
 import { findOrderForTracking, listFulfillmentEvents } from "@/lib/server/orders";
+import { clientAddress, createRateLimiter, rateLimited } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
+// Guessing an order needs both its number and the buyer's email. Counting per
+// email stops anyone brute-forcing the number for a known address, even if they
+// change their own address; counting per caller slows general probing.
+const perEmail = createRateLimiter({ limit: 8, windowMs: 10 * 60_000 });
+const perCaller = createRateLimiter({ limit: 40, windowMs: 10 * 60_000 });
+
 export async function POST(request: Request) {
   try {
+    const caller = perCaller.check(clientAddress(request));
+    if (!caller.ok) return rateLimited(caller.retryAfterSeconds);
     let lookup: ReturnType<typeof parseTrackingLookup>;
     try {
       lookup = parseTrackingLookup(await readJson(request));
@@ -13,6 +22,8 @@ export async function POST(request: Request) {
       if (error instanceof FulfillmentInputError) throw new HttpError(400, error.message);
       throw error;
     }
+    const email = perEmail.check(lookup.email);
+    if (!email.ok) return rateLimited(email.retryAfterSeconds);
     // A wrong number and a wrong email give the same answer, so nobody can
     // use this page to find out which order numbers exist.
     const order = await findOrderForTracking(lookup);

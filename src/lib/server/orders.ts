@@ -250,10 +250,10 @@ export async function findOrderForTracking(lookup: TrackingLookup): Promise<Orde
   return match ?? null;
 }
 
-export async function listAdminOrders(): Promise<Order[]> {
+export async function listAdminOrders(): Promise<{ orders: Order[]; truncated: boolean }> {
   const snap = await storeDb().collection("orders").orderBy("createdAt", "desc").limit(201).get();
-  if (snap.size > 200) throw new HttpError(503, "Order admin needs pagination before processing more orders");
-  return snap.docs.map((doc) => doc.data() as Order);
+  const orders = snap.docs.slice(0, 200).map((doc) => doc.data() as Order);
+  return { orders, truncated: snap.size > 200 };
 }
 
 export async function updateOrderFulfillment(reference: string, value: unknown, actorUid: string): Promise<Order> {

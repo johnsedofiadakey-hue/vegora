@@ -90,6 +90,7 @@ export default function AdminPage() {
     try {
       const result = await adminFetch("/api/admin/orders");
       setOrders(result.orders);
+      if (result.truncated) setMessage("Showing the latest 200 orders. Older orders are not listed here yet.");
       const reference = selectedOrder && result.orders.some((order: AdminOrder) => order.reference === selectedOrder)
         ? selectedOrder : result.orders[0]?.reference;
       setSelectedOrder(reference ?? null);

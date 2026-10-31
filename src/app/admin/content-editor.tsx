@@ -57,7 +57,7 @@ const siteImageLabels: Record<string, string> = {
 
 // Where an owner can see each section once it is live.
 const livePage: Record<BlockId, string> = {
-  announcement: "/", home: "/", edit: "/the-edit", about: "/about", contact: "/", delivery: "/delivery", returns: "/returns",
+  announcement: "/", home: "/", edit: "/the-edit", about: "/about", contact: "/", delivery: "/delivery", returns: "/returns", privacy: "/privacy", terms: "/terms",
 };
 
 function sameValues(fields: FieldSpec[], a: ContentValues, b: ContentValues): boolean {

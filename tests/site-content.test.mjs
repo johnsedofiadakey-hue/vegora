@@ -13,7 +13,7 @@ const t2 = "2026-10-31T12:00:00.000Z";
 const rejects = (fn, kind = "invalid") => assert.throws(fn, (error) => error instanceof SiteContentError && error.kind === kind, String(fn));
 
 test("every block's built-in defaults pass its own validation", () => {
-  assert.deepEqual(blockIds, ["announcement", "home", "edit", "about", "contact", "delivery", "returns"]);
+  assert.deepEqual(blockIds, ["announcement", "home", "edit", "about", "contact", "delivery", "returns", "privacy", "terms"]);
   for (const id of blockIds) {
     const defaults = defaultValues(id);
     assert.deepEqual(parseValues(id, defaults), defaults, id);
@@ -256,4 +256,15 @@ test("contact links are built from validated values only", () => {
   assert.equal(contactHref("phone", values.phone), "tel:+233241234567");
   assert.equal(contactHref("whatsapp", values.whatsapp), "https://wa.me/233241234567");
   assert.equal(contactHref("instagram", values.instagram), "https://instagram.com/vegora.gh");
+});
+
+test("privacy and terms stay hidden until they have text, like delivery and returns", () => {
+  for (const id of ["privacy", "terms"]) {
+    assert.equal(policyIsLive(defaultValues(id)), false, id);
+    assert.equal(policyIsLive(parseValues(id, { body: "   " })), false, id);
+    assert.equal(policyIsLive(parseValues(id, { body: "Our terms." })), true, id);
+    assert.equal(parseValues(id, { body: "x".repeat(12000) }).body.length, 12000);
+    rejects(() => parseValues(id, { body: "x".repeat(12001) }));
+    rejects(() => parseValues(id, { body: "<script>alert(1)</script>" }));
+  }
 });

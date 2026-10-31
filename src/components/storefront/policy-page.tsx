@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { paragraphs, policyIsLive } from "@/lib/site-content";
 import { getContent } from "@/lib/server/site-content-cache";
 
-// Delivery and returns text is written by the owner in the admin. Until there
+// Delivery, returns, privacy and terms text is written by the owner in the admin. Until there
 // is text, the page does not exist, so nobody lands on an empty promise.
-export async function PolicyPage({ block }: { block: "delivery" | "returns" }) {
+export async function PolicyPage({ block }: { block: "delivery" | "returns" | "privacy" | "terms" }) {
   const content = await getContent(block);
   if (!policyIsLive(content)) notFound();
   return <div className="policy-page">

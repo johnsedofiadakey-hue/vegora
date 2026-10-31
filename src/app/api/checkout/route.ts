@@ -2,13 +2,22 @@ import { checkoutConfig } from "@/lib/server/checkout-config";
 import { jsonError, readJson, HttpError } from "@/lib/server/http";
 import { failInitialization, parseCheckoutInput, reserveOrder, markOrderInitialized } from "@/lib/server/orders";
 import { initializePaystack } from "@/lib/server/paystack";
+import { clientAddress, createRateLimiter, rateLimited } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
+
+// Every new checkout holds stock for 30 minutes, so starting them is limited.
+const perEmail = createRateLimiter({ limit: 5, windowMs: 10 * 60_000 });
+const perCaller = createRateLimiter({ limit: 12, windowMs: 10 * 60_000 });
 
 export async function POST(request: Request) {
   try {
     const config = checkoutConfig();
+    const caller = perCaller.check(clientAddress(request));
+    if (!caller.ok) return rateLimited(caller.retryAfterSeconds);
     const input = parseCheckoutInput(await readJson(request));
+    const email = perEmail.check(input.email);
+    if (!email.ok) return rateLimited(email.retryAfterSeconds);
     const { order, created } = await reserveOrder(input, config);
     if (!created) {
       if (order.status === "pending_payment" && order.authorizationUrl && new Date().toISOString() < order.reservationExpiresAt) {
