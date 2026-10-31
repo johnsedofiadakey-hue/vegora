@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  blockIds, blocks, blockStatus, contactChannels, defaultValues, describeBlocks, discardDraft, editorValues,
+  blockIds, blocks, blockStatus, contactChannels, contactHref, defaultValues, describeBlocks, discardDraft, editorValues,
   emptyBlockState, isBlockId, normalizeState, paragraphs, parseValues, policyIsLive, publishDraft,
   publishedValues, resolveValues, restoreRevision, saveDraft, SiteContentError,
 } from "../src/lib/site-content.ts";
@@ -248,4 +248,12 @@ test("the admin description lists every field with its limits", () => {
   }
   // The description is sent to the browser, so it must survive JSON.
   assert.deepEqual(JSON.parse(JSON.stringify(described)), described);
+});
+
+test("contact links are built from validated values only", () => {
+  const values = parseValues("contact", { email: "hello@vegora.com", phone: "+233 (24) 123-4567", whatsapp: "+233 24 123 4567", instagram: "@vegora.gh" });
+  assert.equal(contactHref("email", values.email), "mailto:hello@vegora.com");
+  assert.equal(contactHref("phone", values.phone), "tel:+233241234567");
+  assert.equal(contactHref("whatsapp", values.whatsapp), "https://wa.me/233241234567");
+  assert.equal(contactHref("instagram", values.instagram), "https://instagram.com/vegora.gh");
 });

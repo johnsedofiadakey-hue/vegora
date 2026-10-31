@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   allowedNextStatuses, canAdvanceFulfillment, FulfillmentInputError, fulfillmentTransition,
-  parseFulfillmentInput, parseTrackingLookup, publicMilestones, publicTrackingView,
+  normalizeShortCode, parseFulfillmentInput, parseTrackingLookup, publicMilestones, publicTrackingView, shortCodePattern, shortOrderCode,
   requiresTrackingReference, trackingLookupMatches,
 } from "../src/lib/fulfillment.ts";
 
@@ -66,10 +66,14 @@ test("delivery update input is validated before anything is written", () => {
 test("tracking lookups need a well-formed reference and email, and mismatches look identical", () => {
   assert.deepEqual(
     parseTrackingLookup({ reference: ` VG-${"ABCDEF0123456789".repeat(2)} `, email: " Customer@Example.com " }),
-    { reference: `VG-${"abcdef0123456789".repeat(2)}`, email: "customer@example.com" },
+    { reference: `VG-${"abcdef0123456789".repeat(2)}`, shortCode: null, email: "customer@example.com" },
   );
+  // The short order number works too, however a person types it.
+  for (const typed of ["VG-7K2M9QXA", "vg-7k2m9qxa", " VG7K2M9QXA ", "7K2M 9QXA", "vg 7k2m-9qxa"]) {
+    assert.deepEqual(parseTrackingLookup({ reference: typed, email: "A@B.co" }), { reference: null, shortCode: "VG-7K2M9QXA", email: "a@b.co" }, typed);
+  }
   for (const value of [null, [], "x", {}, { reference }, { email: "a@b.co" },
-    { reference: "VG-short", email: "a@b.co" }, { reference: `${reference}0`, email: "a@b.co" },
+    { reference: "VG-short", email: "a@b.co" }, { reference: "VG-7K2M9QX", email: "a@b.co" }, { reference: "VG-7K2M9QXAB", email: "a@b.co" }, { reference: `${reference}0`, email: "a@b.co" },
     { reference: reference.replace("VG-", "XX-"), email: "a@b.co" },
     { reference, email: "not-an-email" }, { reference, email: `${"a".repeat(250)}@b.co` },
     { reference: 5, email: "a@b.co" }]) {
@@ -116,7 +120,8 @@ test("public tracking contains progress but no customer or operator data", () =>
   };
   const events = [{ status: "dispatched", provider: "VEGORA delivery", trackingReference: "VG-DEL-1001", at: "2026-10-31T12:00:00.000Z", actorUid: "private-operator", note: "private operator note" }];
   const result = publicTrackingView(order, events);
-  assert.equal(result.orderId, order.reference);
+  assert.equal(result.orderId, shortOrderCode(order.reference));
+  assert.equal(JSON.stringify(result).includes(order.reference), false, "the long payment reference is not shown to customers");
   assert.equal(result.fulfillmentStatus, "dispatched");
   assert.equal(result.trackingReference, "VG-DEL-1001");
   assert.deepEqual(result.updates, [{ status: "dispatched", at: "2026-10-31T12:00:00.000Z" }]);
@@ -146,4 +151,32 @@ test("delivery details stay hidden until dispatch and for unpaid orders", () => 
 
   const legacy = publicTrackingView({ ...base, status: "paid" }, []);
   assert.equal(legacy.fulfillmentStatus, "unfulfilled");
+});
+
+test("the short order number is stable, readable and tied to the reference", () => {
+  const references = ["VG-0123456789abcdef0123456789abcdef", "VG-ffffffffffffffffffffffffffffffff", "VG-00000000000000000000000000000000"];
+  assert.equal(shortOrderCode(references[0]), "VG-04HMASW9");
+  assert.equal(shortOrderCode(references[1]), "VG-ZZZZZZZZ");
+  assert.equal(shortOrderCode(references[2]), "VG-00000000");
+  assert.equal(shortOrderCode(references[0].toUpperCase().replace("VG-", "VG-")), shortOrderCode(references[0]));
+  for (const reference of references) assert.match(shortOrderCode(reference), shortCodePattern);
+  for (const bad of ["", "VG-short", "XX-0123456789abcdef0123456789abcdef", "VG-0123456789abcdef0123456789abcde", "VG-0123456789abcdef0123456789abcdefAA", null]) {
+    assert.equal(shortOrderCode(bad ?? ""), null, String(bad));
+  }
+  // The alphabet leaves out I, L, O and U, so no code can be misread.
+  for (let index = 0; index < 400; index += 1) {
+    const hex = Array.from({ length: 32 }, (_, at) => ((index * 31 + at * 7) % 16).toString(16)).join("");
+    assert.match(shortOrderCode(`VG-${hex}`), /^VG-[0-9A-HJKMNP-TV-Z]{8}$/);
+  }
+});
+
+test("a mistyped order number is forgiven only where it is unambiguous", () => {
+  assert.equal(normalizeShortCode("vg-0o0o0o0o"), "VG-00000000");
+  assert.equal(normalizeShortCode("VG-1IL1IL1I"), "VG-11111111");
+  assert.equal(normalizeShortCode("VG-7K2M9QX"), null);
+  assert.equal(normalizeShortCode("VG-7K2M9QXAA"), null);
+  assert.equal(normalizeShortCode("VG-7K2M9QX!"), null);
+  assert.equal(normalizeShortCode("VG-7K2M9QXU"), null);
+  assert.equal(normalizeShortCode(""), null);
+  assert.equal(normalizeShortCode("0123456789abcdef0123456789abcdef"), null);
 });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, Minus, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addToBag } from "./bag-store";
 import { Product, formatMoney } from "./catalog-types";
 import { findPreviewProduct, previewPriceMinor } from "@/lib/preview-products";
@@ -25,6 +25,8 @@ function previewRecord(slug: string): Product | null {
   };
 }
 
+const addedMessage = "Added to your bag.";
+
 export function ProductDetail({ slug }: { slug: string }) {
   const [product, setProduct] = useState<Product | null>(() => previewRecord(slug));
   const [state, setState] = useState<"loading" | "ready" | "missing">(previewRecord(slug) ? "ready" : "loading");
@@ -33,6 +35,7 @@ export function ProductDetail({ slug }: { slug: string }) {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const sizePicker = useRef<HTMLFieldSetElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -50,9 +53,21 @@ export function ProductDetail({ slug }: { slug: string }) {
   const hasAvailableSize = product.variants.some((variant) => variant.stock > 0);
   const canAdd = !isPreview && !!chosenVariant && chosenVariant.stock > 0 && product.priceMinor !== null;
 
+  // On a phone the price and size picker are below the photographs, so a bar
+  // pinned to the bottom keeps the next step in reach. With no size chosen it
+  // takes the shopper to the size picker; once added it offers the bag.
+  function barAction() {
+    if (!chosenVariant) {
+      sizePicker.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      sizePicker.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
+      return;
+    }
+    add();
+  }
+
   function add() {
     if (!chosenVariant || !canAdd) return;
-    try { addToBag(product!, chosenVariant, quantity); setFeedback("Added to your bag."); }
+    try { addToBag(product!, chosenVariant, quantity); setFeedback(addedMessage); }
     catch { setFeedback("Your browser could not save this bag. Please try again."); }
   }
 
@@ -63,12 +78,18 @@ export function ProductDetail({ slug }: { slug: string }) {
     </div>
     <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to collection</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
       {isPreview ? <div className="product-preview-notice"><span>Collection preview</span><p>This piece is in preview. The displayed price is for testing only. Final price and available sizes will be confirmed before ordering opens.</p></div> : <>
-        <fieldset className="size-picker"><legend>Select size</legend><div>{product.variants.map((variant) => <button key={variant.id} type="button" disabled={variant.stock < 1} aria-pressed={variantId === variant.id} onClick={() => { setVariantId(variant.id); setQuantity(1); setFeedback(""); }}>{variant.size}</button>)}</div></fieldset>
+        <fieldset className="size-picker" ref={sizePicker}><legend>Select size</legend><div>{product.variants.map((variant) => <button key={variant.id} type="button" disabled={variant.stock < 1} aria-pressed={variantId === variant.id} onClick={() => { setVariantId(variant.id); setQuantity(1); setFeedback(""); }}>{variant.size}</button>)}</div></fieldset>
         <p className="stock-note">{!product.variants.length ? "Sizes will be added soon" : !hasAvailableSize ? "Currently unavailable" : !chosenVariant ? "Choose a size to continue" : `${chosenVariant.stock} available in this size`}</p>
         <div className="quantity-picker"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" disabled={quantity <= 1} onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={16} /></button><strong>{quantity}</strong><button type="button" aria-label="Increase quantity" disabled={!chosenVariant || quantity >= chosenVariant.stock} onClick={() => setQuantity(Math.min(chosenVariant?.stock || 1, quantity + 1))}><Plus size={16} /></button></div></div>
         <button className="add-bag-button" type="button" disabled={!canAdd} onClick={add}>{canAdd ? "Add to bag" : hasAvailableSize ? "Select a size" : "Unavailable"} <ArrowUpRight size={18} /></button><p className="product-feedback" role="status">{feedback}</p>
       </>}
       {!isPreview && <div className="product-disclosure"><h2>Details</h2><p>{product.description}</p></div>}
     </div>
+    {!isPreview && product.priceMinor !== null && <div className="mobile-buy-bar">
+      <div><strong>{formatMoney(product.priceMinor, product.currency)}</strong><span>{chosenVariant ? `Size ${chosenVariant.size}` : hasAvailableSize ? "Choose a size" : "Currently unavailable"}</span></div>
+      {feedback === addedMessage
+        ? <Link href="/bag">View bag <ArrowUpRight size={16} /></Link>
+        : <button type="button" disabled={!hasAvailableSize} onClick={barAction}>{!hasAvailableSize ? "Unavailable" : chosenVariant ? "Add to bag" : "Select size"}</button>}
+    </div>}
   </div>;
 }

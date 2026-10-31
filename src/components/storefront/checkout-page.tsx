@@ -28,8 +28,12 @@ export function CheckoutPage() {
         const data = await response.json() as { zones?: Zone[] };
         if (!Array.isArray(data.zones) || !data.zones.length) return;
         setZones(data.zones);
-        setZoneId(data.zones[0].id);
-        setCity(data.zones[0].cities?.[0] || "");
+        // Never pre-select an area when there is a choice: the delivery fee
+        // depends on it, and a quiet default could be paid for by mistake.
+        if (data.zones.length === 1) {
+          setZoneId(data.zones[0].id);
+          setCity(data.zones[0].cities?.[0] || "");
+        }
         setAvailable(true);
       })
       .catch(() => {})
@@ -39,7 +43,7 @@ export function CheckoutPage() {
 
   const zone = zones.find((entry) => entry.id === zoneId);
   const subtotal = items.reduce((sum, item) => sum + item.priceMinor * item.quantity, 0);
-  const delivery = zone?.feeMinor ?? 0;
+  const delivery = zone ? zone.feeMinor : null;
   const supportedBag = items.every((item) => item.currency === "GHS" && item.quantity <= 10);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -95,7 +99,7 @@ export function CheckoutPage() {
             <div className="checkout-fields"><label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} /></label><label>Phone number<input name="phone" type="tel" autoComplete="tel" inputMode="tel" required minLength={8} maxLength={30} /></label></div>
           </fieldset>
           <fieldset><legend>02 / Delivery in Ghana</legend>
-            <label>Delivery area<select value={zoneId} onChange={(event) => { const next = zones.find((entry) => entry.id === event.target.value); setZoneId(event.target.value); setCity(next?.cities?.[0] || ""); }} required>{zones.map((entry) => <option key={entry.id} value={entry.id}>{entry.label} · {formatMoney(entry.feeMinor)}</option>)}</select></label>
+            <label>Delivery area<select value={zoneId} onChange={(event) => { const next = zones.find((entry) => entry.id === event.target.value); setZoneId(event.target.value); setCity(next?.cities?.[0] || ""); }} required><option value="" disabled>Select your delivery area</option>{zones.map((entry) => <option key={entry.id} value={entry.id}>{entry.label} · {formatMoney(entry.feeMinor)}</option>)}</select></label>
             <label>Address line 1<input name="addressLine1" autoComplete="address-line1" required maxLength={200} /></label>
             <label>Address line 2 <span>(optional)</span><input name="addressLine2" autoComplete="address-line2" maxLength={200} /></label>
             <div className="checkout-fields"><label>City{zone?.cities?.length ? <select name="city" value={city} onChange={(event) => setCity(event.target.value)} required>{zone.cities.map((entry) => <option key={entry} value={entry}>{entry}</option>)}</select> : <input name="city" value={city} onChange={(event) => setCity(event.target.value)} autoComplete="address-level2" required maxLength={100} />}</label><label>Region<input value={zone?.region || ""} readOnly aria-label="Region" /></label></div>
@@ -106,8 +110,8 @@ export function CheckoutPage() {
         </form>
         <aside className="checkout-summary"><span className="eyebrow">YOUR SELECTION</span><h2>Order summary</h2>
           <div className="checkout-lines">{items.map((item) => <div key={item.key}><span>{item.name}<small>Size {item.size} · Qty {item.quantity}</small></span><strong>{formatMoney(item.priceMinor * item.quantity)}</strong></div>)}</div>
-          <div className="checkout-totals"><div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div><div><span>Delivery</span><strong>{formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>Total</span><strong>{formatMoney(subtotal + delivery)}</strong></div></div>
-          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag}>{submitting ? "Connecting to Paystack…" : "Continue to secure payment"} <ArrowUpRight size={16} /></button>
+          <div className="checkout-totals"><div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div><div><span>Delivery</span><strong>{delivery === null ? "Select your area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total before delivery" : "Total"}</span><strong>{formatMoney(subtotal + (delivery ?? 0))}</strong></div></div>
+          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? "Connecting to Paystack…" : "Continue to secure payment"} <ArrowUpRight size={16} /></button>
           {!supportedBag && <p className="checkout-error">Your bag needs updating. Please return to your bag before checkout.</p>}
           <p className="checkout-summary-note">Prices and stock are checked again before payment begins.</p>
         </aside>

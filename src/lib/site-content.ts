@@ -451,6 +451,16 @@ export function contactChannels(values: ContentValues): { kind: "email" | "phone
   return result;
 }
 
+/** Link for a contact channel. Values were validated when saved, so they are safe to put in a link. */
+export function contactHref(kind: "email" | "phone" | "whatsapp" | "instagram", value: string): string {
+  switch (kind) {
+    case "email": return `mailto:${value}`;
+    case "phone": return `tel:${value.replace(/[^+0-9]/g, "")}`;
+    case "whatsapp": return `https://wa.me/${value.replace(/\D/g, "")}`;
+    case "instagram": return `https://instagram.com/${value}`;
+  }
+}
+
 /** The delivery and returns pages stay hidden until they have text. */
 export function policyIsLive(values: ContentValues): boolean {
   return typeof values.body === "string" && values.body.trim().length > 0;

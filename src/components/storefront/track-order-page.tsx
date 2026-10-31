@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
+import { shortOrderCode } from "@/lib/fulfillment";
 
 type TrackingResult = {
   orderId: string;
@@ -43,7 +44,8 @@ export function TrackOrderPage() {
     let timer: number | undefined;
     try {
       const saved = window.sessionStorage.getItem("vegora-last-order-reference") ?? "";
-      if (/^VG-[0-9a-f]{32}$/.test(saved)) timer = window.setTimeout(() => setReference(saved), 0);
+      const code = shortOrderCode(saved);
+      if (code) timer = window.setTimeout(() => setReference(code), 0);
     } catch { /* The form still supports manual entry. */ }
     return () => window.clearTimeout(timer);
   }, []);
@@ -66,10 +68,10 @@ export function TrackOrderPage() {
   }
 
   return <div className="track-page section-pad">
-    <div className="track-intro"><span className="eyebrow">VEGORA / YOUR ORDER</span><h1>Track your order.</h1><p>Enter the order reference shown after checkout and the email used for your order.</p></div>
+    <div className="track-intro"><span className="eyebrow">VEGORA / YOUR ORDER</span><h1>Track your order.</h1><p>Enter your order number, shown when you paid, and the email you used for the order.</p></div>
     <div className="track-layout">
       <form className="track-form" onSubmit={lookup}>
-        <label>Order reference<input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="VG-…" maxLength={35} autoCapitalize="characters" required /></label>
+        <label>Order number<input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="VG-7K2M9QXA" maxLength={40} autoCapitalize="characters" autoComplete="off" spellCheck={false} required /></label>
         <label>Order email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" maxLength={254} required /></label>
         <button type="submit" disabled={loading}>{loading ? "Checking…" : "Check order"} <ArrowUpRight size={16} /></button>
         {error && <p className="track-error" role="alert">{error}</p>}
@@ -81,7 +83,7 @@ export function TrackOrderPage() {
           {tracking.paymentStatus === "paid" ? <>
             <p className="track-status-copy">{tracking.fulfillmentStatus === "unfulfilled" ? "Payment is confirmed. We will update this page as your order moves forward." : tracking.fulfillmentStatus === "preparing" ? "Your order is being prepared for delivery." : tracking.fulfillmentStatus === "dispatched" ? "Your order has been dispatched." : "Your order has been marked delivered."}</p>
             {tracking.trackingReference && <div className="track-reference"><span>DELIVERY REFERENCE</span><strong>{tracking.trackingReference}</strong>{tracking.provider && <small>{tracking.provider}</small>}</div>}
-          </> : <p className="track-status-copy">We have not confirmed this order for fulfillment. Contact VEGORA with your order reference if you need help.</p>}
+          </> : <p className="track-status-copy">We have not confirmed this order for fulfillment. Contact VEGORA with your order number if you need help.</p>}
           <ol className="track-timeline"><li><strong>Order placed</strong><span>{dateLabel(tracking.placedAt)}</span></li>{tracking.paidAt && <li><strong>Payment confirmed</strong><span>{dateLabel(tracking.paidAt)}</span></li>}{tracking.updates.map((update, index) => <li key={`${update.at}-${index}`}><strong>{statusCopy[update.status as TrackingResult["fulfillmentStatus"]] ?? update.status.replaceAll("_", " ")}</strong><span>{dateLabel(update.at)}</span></li>)}</ol>
         </>}
       </div>

@@ -121,16 +121,53 @@ export function parseFulfillmentInput(value: unknown): FulfillmentInput {
   return { status, provider, trackingReference, note };
 }
 
-export function parseTrackingLookup(value: unknown): { reference: string; email: string } {
+// A short, readable order number shown to customers, for example VG-7K2M9QXA.
+// It is derived from the long payment reference (VG- plus 32 hex digits), which
+// stays the real identifier everywhere else. Eight base-32 characters carry 40
+// bits, and the alphabet leaves out I, L, O and U so it is hard to misread.
+const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+export const shortCodePattern = /^VG-[0-9A-HJKMNP-TV-Z]{8}$/;
+
+export function shortOrderCode(reference: string): string | null {
+  const match = /^VG-([0-9a-f]{32})$/i.exec(reference.trim());
+  if (!match) return null;
+  let value = parseInt(match[1].slice(0, 10), 16);
+  let code = "";
+  for (let index = 0; index < 8; index += 1) {
+    code = alphabet[value % 32] + code;
+    value = Math.floor(value / 32);
+  }
+  return `VG-${code}`;
+}
+
+/** Accepts what a person might type: any case, spaces or no dash, O for 0, I or L for 1. */
+export function normalizeShortCode(input: string): string | null {
+  let text = input.trim().toUpperCase().replace(/[\s-]+/g, "");
+  if (text.startsWith("VG")) text = text.slice(2);
+  text = text.replace(/O/g, "0").replace(/[IL]/g, "1");
+  const code = `VG-${text}`;
+  return shortCodePattern.test(code) ? code : null;
+}
+
+export type TrackingLookup = { reference: string | null; shortCode: string | null; email: string };
+
+/** Accepts either the short order number (VG-7K2M9QXA) or the long payment reference. */
+export function parseTrackingLookup(value: unknown): TrackingLookup {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new FulfillmentInputError("Enter your order reference and email");
+    throw new FulfillmentInputError("Enter your order number and email");
   }
   const { reference, email } = value as Record<string, unknown>;
-  if (typeof reference !== "string" || !orderReferencePattern.test(reference.trim()) ||
+  if (typeof reference !== "string" || reference.length > 60 ||
       typeof email !== "string" || email.length > 254 || !emailPattern.test(email.trim())) {
-    throw new FulfillmentInputError("Enter a valid order reference and email");
+    throw new FulfillmentInputError("Enter a valid order number and email");
   }
-  return { reference: `VG-${reference.trim().slice(3).toLowerCase()}`, email: email.trim().toLowerCase() };
+  const cleanEmail = email.trim().toLowerCase();
+  if (orderReferencePattern.test(reference.trim())) {
+    return { reference: `VG-${reference.trim().slice(3).toLowerCase()}`, shortCode: null, email: cleanEmail };
+  }
+  const shortCode = normalizeShortCode(reference);
+  if (!shortCode) throw new FulfillmentInputError("Enter a valid order number and email");
+  return { reference: null, shortCode, email: cleanEmail };
 }
 
 /** Same answer for a wrong reference and a wrong email, so lookups cannot probe for valid references. */
@@ -176,7 +213,7 @@ export function publicTrackingView(order: {
   const paid = order.status === "paid";
   const showTracking = paid && requiresTrackingReference(fulfillment.status);
   return {
-    orderId: order.reference,
+    orderId: shortOrderCode(order.reference) ?? order.reference,
     paymentStatus: order.status,
     placedAt: order.createdAt,
     paidAt: order.paidAt,

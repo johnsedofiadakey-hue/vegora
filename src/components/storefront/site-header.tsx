@@ -6,6 +6,7 @@ import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Wordmark } from "./wordmark";
 import { useWomenAvailable } from "./collection-availability";
+import { readBag } from "./bag-store";
 
 const nav = [
   { href: "/women", label: "Women" },
@@ -19,6 +20,19 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bagCount, setBagCount] = useState(0);
+
+  useEffect(() => {
+    const update = () => setBagCount(readBag().reduce((total, item) => total + item.quantity, 0));
+    const timer = window.setTimeout(update, 0);
+    window.addEventListener("vegora-bag-change", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("vegora-bag-change", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -47,7 +61,7 @@ export function SiteHeader() {
           </nav>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label={searchOpen ? "Close search" : "Search"} aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={22} strokeWidth={1.35} /></button>
-            <Link className="icon-button" href="/bag" aria-label="Shopping bag"><ShoppingBag size={22} strokeWidth={1.35} /></Link>
+            <Link className="icon-button bag-link" href="/bag" aria-label={bagCount > 0 ? `Shopping bag, ${bagCount} ${bagCount === 1 ? "item" : "items"}` : "Shopping bag"}><ShoppingBag size={22} strokeWidth={1.35} />{bagCount > 0 && <span className="bag-count" aria-hidden="true">{bagCount}</span>}</Link>
           </div>
         </div>
         {searchOpen && <form className="search-panel" role="search" onSubmit={search}>

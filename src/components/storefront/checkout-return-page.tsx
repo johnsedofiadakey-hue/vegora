@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readBag, writeBag } from "./bag-store";
+import { shortOrderCode } from "@/lib/fulfillment";
 
 type OrderStatus = "initializing" | "pending_payment" | "paid" | "failed" | "expired" | "review_required";
 
@@ -45,15 +46,15 @@ export function CheckoutReturnPage() {
   }, []);
   const copy = {
     checking: ["Checking your payment", "Please wait while we confirm the result with Paystack."],
-    paid: ["Your order is confirmed", "Payment has been verified. Keep your order reference for any enquiries."],
-    pending_payment: ["Payment is still pending", "We have not yet confirmed payment. Please check again shortly or contact us with your reference."],
-    initializing: ["Payment is still pending", "We have not yet confirmed payment. Please check again shortly or contact us with your reference."],
+    paid: ["Your order is confirmed", "Payment has been verified. Keep your order number and the email you used. You can follow your delivery any time on the Track order page."],
+    pending_payment: ["Payment is still pending", "We have not yet confirmed payment. Please check again shortly or contact us with your order number."],
+    initializing: ["Payment is still pending", "We have not yet confirmed payment. Please check again shortly or contact us with your order number."],
     failed: ["Payment was not completed", "Your order is not confirmed. You can return to your bag and try again."],
     expired: ["Checkout has expired", "Your order is not confirmed. Please return to your bag and start again."],
-    review_required: ["Your order needs a review", "Please contact VEGORA with your reference. We will check the payment before confirming your order."],
-    error: ["We could not confirm your payment", "Please contact VEGORA with your payment reference before placing another order."],
+    review_required: ["Your order needs a review", "Please contact VEGORA with your order number. We will check the payment before confirming your order."],
+    error: ["We could not confirm your payment", "Please contact VEGORA with your order number before placing another order."],
   }[status];
-  return <div className="checkout-return section-pad"><span className="eyebrow">VEGORA / ORDER STATUS</span><h1>{copy[0]}</h1><p>{copy[1]}</p>{reference && <p className="checkout-reference">Reference <strong>{reference}</strong></p>}
+  return <div className="checkout-return section-pad"><span className="eyebrow">VEGORA / ORDER STATUS</span><h1>{copy[0]}</h1><p>{copy[1]}</p>{reference && <p className="checkout-reference">Order number <strong>{shortOrderCode(reference) ?? reference}</strong></p>}
     {(status === "pending_payment" || status === "initializing") && <button type="button" className="outline-button" onClick={() => window.location.reload()}>Check again</button>}
     {status === "paid" && <Link href="/track" className="line-link">Track your order <ArrowUpRight size={16} /></Link>}
     {status !== "checking" && <Link href={status === "paid" ? "/" : "/bag"} className="line-link">{status === "paid" ? "Return home" : "Return to bag"} <ArrowUpRight size={16} /></Link>}

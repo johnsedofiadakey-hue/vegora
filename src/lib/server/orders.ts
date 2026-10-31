@@ -10,8 +10,8 @@ import type { PaystackVerification } from "./paystack";
 import { paymentAction, type OrderStatus } from "./payment-policy";
 import { paymentConfig } from "./checkout-config";
 import { verifyPaystack } from "./paystack";
-import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput,
-  type Fulfillment, type FulfillmentEvent, type FulfillmentEventKind, type FulfillmentInput,
+import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput, shortOrderCode,
+  trackingLookupMatches, type TrackingLookup, type Fulfillment, type FulfillmentEvent, type FulfillmentEventKind, type FulfillmentInput,
   type FulfillmentStatus } from "../fulfillment";
 
 export type { OrderStatus } from "./payment-policy";
@@ -44,6 +44,8 @@ export interface Order {
   paymentStatus: string | null;
   paidAt: string | null;
   fulfillment?: Fulfillment;
+  /** Short order number shown to customers, derived from the reference. */
+  shortCode?: string;
 }
 
 function boundedText(value: unknown, name: string, max: number, required = true): string {
@@ -171,7 +173,7 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
       lines, subtotalMinor, deliveryFeeMinor: zone.feeMinor, totalMinor, currency: "GHS",
       authorizationUrl: null, createdAt: now.toISOString(), updatedAt: now.toISOString(),
       reservationExpiresAt: expiresAt, paymentStatus: null, paidAt: null,
-      fulfillment: { ...emptyFulfillment } };
+      fulfillment: { ...emptyFulfillment }, shortCode: shortOrderCode(reference) ?? undefined };
     for (const [slug, record] of records) tx.set(storeDb().collection("products").doc(slug), record);
     tx.create(orderRef(reference), order);
     tx.create(keyRef, { reference, fingerprint, createdAt: now.toISOString() });
@@ -233,6 +235,19 @@ export async function getOrder(reference: string): Promise<Order | null> {
   if (!/^VG-[0-9a-f]{32}$/.test(reference)) return null;
   const snap = await orderRef(reference).get();
   return (snap.data() as Order | undefined) ?? null;
+}
+
+/** Finds the order a customer is asking about by short number or long reference, if the email matches. */
+export async function findOrderForTracking(lookup: TrackingLookup): Promise<Order | null> {
+  if (lookup.reference) {
+    const order = await getOrder(lookup.reference);
+    return order && trackingLookupMatches(order, lookup.email) ? order : null;
+  }
+  if (!lookup.shortCode) return null;
+  // Short numbers are not guaranteed unique, so check the email on every match.
+  const snap = await storeDb().collection("orders").where("shortCode", "==", lookup.shortCode).limit(5).get();
+  const match = snap.docs.map((doc) => doc.data() as Order).find((order) => trackingLookupMatches(order, lookup.email));
+  return match ?? null;
 }
 
 export async function listAdminOrders(): Promise<Order[]> {
