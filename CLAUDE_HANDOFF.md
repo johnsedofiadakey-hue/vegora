@@ -1,5 +1,35 @@
 # VEGORA handoff for Claude
 
+## Status update (31 October 2026, evening). Read this first
+
+It replaces the "Current snapshot" below wherever they differ.
+
+**Built and deployed** (see `ADMIN_SETUP.md` for the contracts, `OWNER_GUIDE.md` for the owner):
+- Admin with Products, Orders and **Content** tabs. Manual delivery workflow (preparing, dispatched, delivered, one-step undo, internal notes), `/track` with a short order number (`VG-7K2M9QXA`) plus email, and a CMS of nine sections (announcement bar, homepage, The Edit, About, contact and footer, delivery, returns, privacy, terms). Policy pages stay hidden until they have text.
+- Hardening: Firestore point-in-time recovery (7 days), rate limits on tracking and checkout, cron secret and the five-minute `vegora-expire-orders` Scheduler job, uptime checks and email alerts (Cloud Monitoring, sent to the project owner), a photo route (`/api/image`), and SEO (sitemap, robots, share previews, product markup) that is **closed to search engines until `VEGORA_ALLOW_INDEXING=true`**.
+- Phone path to checkout: sticky add-to-bag bar, bag count in the header, no pre-selected delivery area.
+
+**Still to do, in order**
+1. **Paystack test key** (the owner brings it): `firebase apphosting:secrets:set PAYSTACK_SECRET_KEY --project vegoragh`, then set the webhook in the Paystack dashboard to `<site>/api/paystack/webhook`. Also needs the owner's **delivery zones** (`VEGORA_DELIVERY_ZONES_JSON`, integer pesewas; never invent them). Then run the synthetic end-to-end cases and only then set the three checkout switches. The expiry job, site URL and cron secret are already in place.
+2. Decisions: a mail service and sender address for order emails, cancel and refund rules, tax. Live payments need a separate implementation, review and the owner's approval (the code rejects live keys).
+3. Owner content: real names, prices, sizes, stock, women's products, policy text, contact details, custom domain.
+4. Optional: CMS draft preview, "notify me" signup, delivery estimate in the bag, mobile money shown at checkout.
+5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`.
+
+**Not yet verified on the live site:** publishing through the live admin (needs the owner's sign-in), the photo route's resizing on Cloud Run, and the alert emails. A real order has never gone end to end.
+
+**Things that cost time, so you do not repeat them**
+- **App Hosting does not serve `/_next/image`.** Photographs go through our own route via the custom loader in `next.config.ts`. It looked fine locally and was a 404 live. Always check the live site, not only `next start`.
+- **Secrets:** App Hosting pins a secret to the version current at rollout, so rotating needs a redeploy before disabling the old version. A trailing newline in a stored secret made the expiry endpoint refuse its own scheduler (the server now trims). `gcloud scheduler jobs create` prints the job, headers included, so discard its output.
+- The auto-mode classifier blocks writes to Secret Manager. Ask the owner to run the step or to add a permission rule. Do not look for another route.
+- Shop pages are `force-dynamic` and read content through a 30-second per-instance cache kept on `globalThis` (route handlers and pages are separate module graphs). Another instance can lag a publish by 30 seconds.
+- Local emulators: the Firestore emulator needs **Java 21+** (`/opt/homebrew/opt/openjdk@21`). The repo's `firebase.json` has no emulator section, so use a config file elsewhere. Build with `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` to sign in to the admin against the Auth emulator. Never ship that build.
+- Node tests import `.ts` files directly: use explicit `.ts` extensions between shared files (`allowImportingTsExtensions` is on), and avoid constructor parameter properties.
+- In the in-app browser: a hidden pane gives stale screenshots (show it with `mcp__ccd_view__show_pane`), native `confirm()` is suppressed (the admin uses on-page confirmations), and `form_input` does not trigger React's change handler on checkboxes, so use real clicks.
+- Another editor (Codex) has worked in this repo at the same time. Check file timestamps and `git status` before editing shared files.
+
+**Monitoring and jobs in project `vegoragh`:** Scheduler job `vegora-expire-orders` (europe-west4), uptime checks "VEGORA home page" and "VEGORA catalog API", alert policies "VEGORA site is down" and "VEGORA server errors", email channel "VEGORA alerts (email)".
+
 ## Mission
 
 Take VEGORA from its current visual preview to a working, tested Ghana ecommerce storefront. Own the admin, catalog, backend, checkout, and release readiness work. Preserve the approved luxury storefront design while completing the operational path. Work in this repository; verify the actual Firebase and Paystack state before changing configuration or claiming a feature works.

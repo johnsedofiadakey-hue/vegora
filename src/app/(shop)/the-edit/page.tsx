@@ -6,7 +6,7 @@ import { ContentImage } from "@/components/storefront/content-image";
 import { EditCompanionPortrait } from "@/components/storefront/edit-companion-portrait";
 import { getContent } from "@/lib/server/site-content-cache";
 
-export const metadata: Metadata = { title: "The Edit" };
+export const metadata: Metadata = { title: "The Edit", description: "A visual expression of presence, individuality, and considered style." };
 
 export default async function TheEditPage() {
   const content = await getContent("edit");

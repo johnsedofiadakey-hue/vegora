@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { paragraphs } from "@/lib/site-content";
 import { getContent } from "@/lib/server/site-content-cache";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = { title: "About", description: "VEGORA is a new destination for considered fashion, built on contrast, clarity, and individual expression." };
 
 export default async function AboutPage() {
   const content = await getContent("about");

@@ -5,13 +5,15 @@ import { ContentImage } from "@/components/storefront/content-image";
 import { WomenOnly } from "@/components/storefront/collection-availability";
 import { HeroCompanionPortrait } from "@/components/storefront/hero-companion-portrait";
 import { defaultValues, type ImageValue } from "@/lib/site-content";
+import { jsonLd, organizationJsonLd, siteOrigin } from "@/lib/seo";
 import { getContent } from "@/lib/server/site-content-cache";
 import { featuredPieceImages } from "@/lib/server/featured-pieces";
 
 export default async function HomePage() {
-  const content = await getContent("home");
+  const [content, contact] = await Promise.all([getContent("home"), getContent("contact")]);
   const pieces = await featuredPieceImages(content.arrivalsProducts, defaultValues("home").arrivalsProducts as string[]);
   return <div className="home-page">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd(siteOrigin(), contact.instagram)) }} />
     <HomeMotion />
     <section className="gallery-hero" aria-labelledby="hero-title">
       <div className="hero-man"><ContentImage image={content.heroImage} fill priority loading="eager" sizes="(max-width: 767px) 50vw, 25vw" /></div>
