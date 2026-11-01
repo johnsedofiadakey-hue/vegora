@@ -66,7 +66,7 @@ Changes appear within about half a minute. If you do not see a change, refresh t
 
 ## Sign-ups
 
-The footer of every page has a small form beside the VEGORA logo. Visitors tick what they want to hear about (new deals, customization, bulk orders, something else), give their email, and may add a name, phone number and a note. Open the **Sign-ups** tab to see them.
+The footer of every page has a "Stay up to date" box under the VEGORA logo where visitors leave their email address for new arrivals and offers. Open the **Sign-ups** tab to see them.
 
 - Filter by interest, **Copy emails** to paste into your email program, or **Download spreadsheet** to open in Excel or Google Sheets.
 - **Remove** takes someone off the list (it asks you to confirm). Do this if a person asks you to delete their details.
