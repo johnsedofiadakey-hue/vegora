@@ -23,7 +23,7 @@ export default async function HomePage() {
         <span className="eyebrow">{content.heroEyebrow}</span>
         <h1 id="hero-title">{content.heroLine1}<br />{content.heroLine2}</h1>
         <p>{content.heroSubline}</p>
-        <div className="hero-links"><Link href="/men">Explore men <ArrowUpRight size={16} /></Link><WomenOnly><Link href="/women">Explore women <ArrowUpRight size={16} /></Link></WomenOnly></div>
+        <div className="hero-links"><Link href="/men">Men <ArrowUpRight size={16} /></Link><WomenOnly><Link href="/women">Women <ArrowUpRight size={16} /></Link></WomenOnly></div>
         <div className="hero-motion-mark" aria-hidden="true"><span className="hero-motion-ring" /><span className="hero-motion-core">V</span></div>
       </div>
       <HeroCompanionPortrait />
