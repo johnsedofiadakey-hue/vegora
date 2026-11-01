@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  blockIds, blocks, blockStatus, contactChannels, contactHref, defaultValues, describeBlocks, discardDraft, editorValues,
+  blockIds, blocks, blockStatus, contactChannels, contactDisplay, contactHref, defaultValues, describeBlocks, discardDraft, editorValues,
   emptyBlockState, isBlockId, normalizeState, paragraphs, parseValues, policyIsLive, publishDraft,
-  publishedValues, resolveValues, restoreRevision, saveDraft, SiteContentError,
+  publishedValues, resolveValues, restoreRevision, saveDraft, SiteContentError, socialLinks,
 } from "../src/lib/site-content.ts";
 
 const t0 = "2026-10-31T10:00:00.000Z";
@@ -109,6 +109,19 @@ test("contact details are checked for their kind", () => {
   rejects(() => parseValues("contact", { instagram: "has space" }));
   rejects(() => parseValues("contact", { instagram: "https://instagram.com/vegora" }));
   rejects(() => parseValues("contact", { footerTagline: "" }));
+});
+
+test("social handles follow each network's username rules", () => {
+  const good = parseValues("contact", { instagram: "vegora.gh", tiktok: "@vegora.gh", facebook: "vegora.gh", x: "@vegora_gh" });
+  assert.deepEqual([good.tiktok, good.facebook, good.x], ["vegora.gh", "vegora.gh", "vegora_gh"]);
+  assert.deepEqual(contactChannels(good).map((channel) => channel.kind), ["instagram", "tiktok", "facebook", "x"]);
+  rejects(() => parseValues("contact", { tiktok: "a" }));
+  rejects(() => parseValues("contact", { tiktok: "has space" }));
+  rejects(() => parseValues("contact", { facebook: "vg" }));
+  rejects(() => parseValues("contact", { facebook: "vegora_gh" }));
+  rejects(() => parseValues("contact", { facebook: "https://facebook.com/vegora" }));
+  rejects(() => parseValues("contact", { x: "vegora.gh" }));
+  rejects(() => parseValues("contact", { x: "a_handle_that_is_too_long" }));
 });
 
 test("the announcement bar needs a message before it can be switched on", () => {
@@ -246,6 +259,16 @@ test("contact links are built from validated values only", () => {
   assert.equal(contactHref("phone", values.phone), "tel:+233241234567");
   assert.equal(contactHref("whatsapp", values.whatsapp), "https://wa.me/233241234567");
   assert.equal(contactHref("instagram", values.instagram), "https://instagram.com/vegora.gh");
+  const social = parseValues("contact", { tiktok: "vegora.gh", facebook: "vegora.gh", x: "vegora_gh" });
+  assert.deepEqual(socialLinks(social), [
+    { platform: "tiktok", href: "https://www.tiktok.com/@vegora.gh" },
+    { platform: "facebook", href: "https://www.facebook.com/vegora.gh" },
+    { platform: "x", href: "https://x.com/vegora_gh" },
+  ]);
+  assert.deepEqual(socialLinks(values).map((link) => link.platform), ["instagram"]);
+  assert.equal(contactDisplay("x", "vegora_gh"), "@vegora_gh");
+  assert.equal(contactDisplay("facebook", "vegora.gh"), "vegora.gh");
+  assert.equal(contactDisplay("email", "hello@vegora.com"), "hello@vegora.com");
 });
 
 test("privacy and terms stay hidden until they have text, like delivery and returns", () => {

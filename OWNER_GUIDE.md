@@ -57,7 +57,7 @@ Things to know:
 - **Homepage:** the opening words, the short introduction, and the heading and sentence above the new arrivals. The arrivals themselves come from Products (tick **New arrival**).
 - **Announcement bar:** a single line above the menu on every page. Switch it on, write the message, and publish. Switch it off the same way.
 - **Delivery, Returns, Privacy and Terms** pages stay hidden, and are not linked from the footer, until you publish text for them. Use wording you or your adviser have approved. Do not copy another shop's policy.
-- **Contact and footer:** fill in the channels you actually answer (email, phone, WhatsApp, Instagram). A Contact page and footer link appear once at least one is filled in.
+- **Contact and footer:** fill in the channels you actually answer (email, phone, WhatsApp) and your social accounts (Instagram, TikTok, Facebook, X). Type the username only, without the @ or the web address; for Facebook, use the part after facebook.com/. A Contact page and footer link appear once at least one is filled in, and each social account also shows under **Follow** in the footer.
 - There is **no preview yet**: publish, then look at the live page. If you do not like it, load the earlier version and publish again.
 
 Changes appear within about half a minute. If you do not see a change, refresh the page once more after waiting.

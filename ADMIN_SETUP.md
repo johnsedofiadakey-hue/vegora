@@ -52,6 +52,10 @@ All routes require an admin ID token. Saving a draft never changes the live site
 
 To try the admin without touching the live project, run the Firestore, Auth and Storage emulators, build with `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`, and start the app with `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`, `FIREBASE_STORAGE_EMULATOR_HOST` and a demo `FIREBASE_PROJECT_ID`. Leave that variable unset for every real build. The Firestore emulator needs Java 21 or newer. The hero and The Edit's second portrait switch automatically with women's stock and are not editable.
 
+## Social profiles
+
+The `contact` block has Instagram, TikTok, Facebook and X username fields (`kind: "handle"` with a `platform`). Each is validated against that network's username rules in `src/lib/site-content.ts` (`socialRules`), so a saved value always makes a working link; full URLs are rejected. Filled-in profiles appear on `/contact`, in a **Follow** column in the footer (opening in a new tab), and as `sameAs` in the homepage organization markup.
+
 ## Footer sign-ups
 
 The footer form (`src/components/storefront/footer-signup.tsx`) posts to the public `POST /api/signup` with `{ email, interests:["deals"|"customization"|"bulk"|"other"], consent:true, name?, phone?, message?, website? }`. Validation lives in `src/lib/signup.ts` (shared, no server imports): consent must be `true`, one to four known interests, a valid email, plain-text limits (message 500). A non-empty `website` field is a honeypot and gets the same `{ ok:true }` without saving. The route allows 10 requests per caller and 3 per email per 10 minutes (429 after that) and answers identically for new and repeat emails. Records live in Firestore `signups/{sha256(email) first 32 hex chars}` (`src/lib/server/signups.ts`): a repeat submission merges interests, keeps `createdAt` and increments `count`.

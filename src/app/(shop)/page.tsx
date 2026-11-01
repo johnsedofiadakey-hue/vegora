@@ -7,6 +7,7 @@ import { WomenOnly } from "@/components/storefront/collection-availability";
 import { HeroCompanionPortrait } from "@/components/storefront/hero-companion-portrait";
 import { jsonLd, organizationJsonLd, siteOrigin } from "@/lib/seo";
 import { getContent } from "@/lib/server/site-content-cache";
+import { socialLinks } from "@/lib/site-content";
 
 // The home page is the opening screen, a short introduction, and the new
 // arrivals, then the footer. The pieces come from the catalogue (anything
@@ -14,7 +15,7 @@ import { getContent } from "@/lib/server/site-content-cache";
 export default async function HomePage() {
   const [content, contact] = await Promise.all([getContent("home"), getContent("contact")]);
   return <div className="home-page">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd(siteOrigin(), contact.instagram)) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd(siteOrigin(), socialLinks(contact).map((link) => link.href))) }} />
     <HomeMotion />
     <section className="gallery-hero" aria-labelledby="hero-title">
       <div className="hero-man"><ContentImage image={content.heroImage} fill priority loading="eager" sizes="(max-width: 767px) 50vw, 25vw" /></div>

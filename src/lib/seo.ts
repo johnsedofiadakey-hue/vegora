@@ -87,14 +87,14 @@ export function productJsonLd(product: ProductForMarkup, origin: string) {
   };
 }
 
-export function organizationJsonLd(origin: string, instagram: string) {
+export function organizationJsonLd(origin: string, profiles: string[]) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "VEGORA",
     url: origin,
     logo: `${origin}/icon.svg`,
-    ...(instagram ? { sameAs: [`https://instagram.com/${instagram}`] } : {}),
+    ...(profiles.length > 0 ? { sameAs: profiles } : {}),
   };
 }
 

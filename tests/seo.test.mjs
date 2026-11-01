@@ -61,10 +61,11 @@ test("share images are resized links, and other links are made absolute", () => 
   assert.equal(absoluteUrl("https://a.example", "https://b.example/x"), "https://b.example/x");
 });
 
-test("organization markup lists Instagram only when there is a handle", () => {
-  assert.equal(organizationJsonLd("https://a.example", "").sameAs, undefined);
-  assert.deepEqual(organizationJsonLd("https://a.example", "vegora.gh").sameAs, ["https://instagram.com/vegora.gh"]);
-  assert.equal(organizationJsonLd("https://a.example", "").url, "https://a.example");
+test("organization markup lists social profiles only when there are some", () => {
+  assert.equal(organizationJsonLd("https://a.example", []).sameAs, undefined);
+  assert.deepEqual(organizationJsonLd("https://a.example", ["https://instagram.com/vegora.gh", "https://x.com/vegora_gh"]).sameAs,
+    ["https://instagram.com/vegora.gh", "https://x.com/vegora_gh"]);
+  assert.equal(organizationJsonLd("https://a.example", []).url, "https://a.example");
 });
 
 test("descriptions are cut on a word and never exceed the limit", () => {

@@ -9,6 +9,17 @@ export type FieldKind = "text" | "paragraph" | "link" | "image" | "toggle" | "em
 
 export interface ImageValue { url: string; alt: string }
 
+export const socialPlatforms = ["instagram", "tiktok", "facebook", "x"] as const;
+export type SocialPlatform = (typeof socialPlatforms)[number];
+
+// Usernames as each network allows them, so a saved value always makes a working link.
+const socialRules: Record<SocialPlatform, { pattern: RegExp; message: string; url: (handle: string) => string; at: boolean }> = {
+  instagram: { pattern: /^[A-Za-z0-9._]{1,30}$/, message: "may use letters, numbers, dots and underscores only", url: (handle) => `https://instagram.com/${handle}`, at: true },
+  tiktok: { pattern: /^[A-Za-z0-9._]{2,24}$/, message: "must be 2 to 24 letters, numbers, dots or underscores", url: (handle) => `https://www.tiktok.com/@${handle}`, at: true },
+  facebook: { pattern: /^[A-Za-z0-9.]{5,50}$/, message: "must be the page username: 5 to 50 letters, numbers or dots", url: (handle) => `https://www.facebook.com/${handle}`, at: false },
+  x: { pattern: /^[A-Za-z0-9_]{1,15}$/, message: "must be up to 15 letters, numbers or underscores", url: (handle) => `https://x.com/${handle}`, at: true },
+};
+
 export interface FieldValueByKind {
   text: string;
   paragraph: string;
@@ -29,6 +40,8 @@ export type Field = {
     help?: string;
     /** Maximum characters. */
     max?: number;
+    /** For handle fields: which social network's username rules and link apply. */
+    platform?: SocialPlatform;
     required?: boolean;
     default: FieldValueByKind[K];
   };
@@ -121,13 +134,16 @@ export const blocks = {
   }),
   contact: defineBlock({
     label: "Contact and footer",
-    description: "How customers reach VEGORA, and the line under the footer logo. The contact page appears once at least one channel is filled in.",
+    description: "How customers reach VEGORA, and the line under the footer logo. The contact page appears once at least one channel is filled in. Social profiles also show in the footer.",
     fields: {
       intro: { kind: "paragraph", label: "Contact page introduction", max: 600, default: "", help: "Optional. A sentence or two above the contact details." },
       email: { kind: "email", label: "Email", max: 254, default: "" },
       phone: { kind: "phone", label: "Phone", max: 20, default: "" },
       whatsapp: { kind: "phone", label: "WhatsApp number", max: 20, default: "", help: "Include the country code, for example +233…" },
-      instagram: { kind: "handle", label: "Instagram handle", max: 30, default: "", help: "Without the @." },
+      instagram: { kind: "handle", platform: "instagram", label: "Instagram handle", max: 30, default: "", help: "Without the @." },
+      tiktok: { kind: "handle", platform: "tiktok", label: "TikTok handle", max: 24, default: "", help: "Without the @." },
+      facebook: { kind: "handle", platform: "facebook", label: "Facebook page username", max: 50, default: "", help: "The part after facebook.com/, for example vegora.gh." },
+      x: { kind: "handle", platform: "x", label: "X (Twitter) handle", max: 15, default: "", help: "Without the @." },
       hours: { kind: "text", label: "Support hours", max: 120, default: "" },
       footerTagline: { kind: "text", label: "Footer tagline", max: 100, required: true, default: "A considered point of view on dressing." },
     },
@@ -202,7 +218,6 @@ const internalLink = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)
 const mediaPath = /^\/api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp|avif)$/i;
 const emailPattern = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const phonePattern = /^\+?[0-9][0-9 ()-]{5,19}$/;
-const handlePattern = /^[A-Za-z0-9._]{1,30}$/;
 
 function invalid(field: Field, message: string): never {
   throw new SiteContentError(`${field.label}: ${message}`);
@@ -265,7 +280,8 @@ function parseField(field: Field, value: unknown): FieldValue {
     }
     case "handle": {
       const clean = plainText(field, value, false).replace(/^@/, "");
-      if (clean && !handlePattern.test(clean)) invalid(field, "may use letters, numbers, dots and underscores only");
+      const rule = socialRules[field.platform ?? "instagram"];
+      if (clean && !rule.pattern.test(clean)) invalid(field, rule.message);
       return clean;
     }
   }
@@ -429,9 +445,11 @@ export function paragraphs(text: string): string[] {
   return text.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
 }
 
-export function contactChannels(values: ContentValues): { kind: "email" | "phone" | "whatsapp" | "instagram"; value: string }[] {
-  const result: { kind: "email" | "phone" | "whatsapp" | "instagram"; value: string }[] = [];
-  for (const kind of ["email", "phone", "whatsapp", "instagram"] as const) {
+export type ContactKind = "email" | "phone" | "whatsapp" | SocialPlatform;
+
+export function contactChannels(values: ContentValues): { kind: ContactKind; value: string }[] {
+  const result: { kind: ContactKind; value: string }[] = [];
+  for (const kind of ["email", "phone", "whatsapp", ...socialPlatforms] as const) {
     const value = values[kind];
     if (typeof value === "string" && value) result.push({ kind, value });
   }
@@ -439,13 +457,28 @@ export function contactChannels(values: ContentValues): { kind: "email" | "phone
 }
 
 /** Link for a contact channel. Values were validated when saved, so they are safe to put in a link. */
-export function contactHref(kind: "email" | "phone" | "whatsapp" | "instagram", value: string): string {
+export function contactHref(kind: ContactKind, value: string): string {
   switch (kind) {
     case "email": return `mailto:${value}`;
     case "phone": return `tel:${value.replace(/[^+0-9]/g, "")}`;
     case "whatsapp": return `https://wa.me/${value.replace(/\D/g, "")}`;
-    case "instagram": return `https://instagram.com/${value}`;
+    default: return socialRules[kind].url(value);
   }
+}
+
+/** How a channel's value reads on the page: social handles get their @. */
+export function contactDisplay(kind: ContactKind, value: string): string {
+  return isSocial(kind) && socialRules[kind].at ? `@${value}` : value;
+}
+
+export function isSocial(kind: ContactKind): kind is SocialPlatform {
+  return (socialPlatforms as readonly string[]).includes(kind);
+}
+
+/** Profile links for the social channels that are filled in, in display order. */
+export function socialLinks(values: ContentValues): { platform: SocialPlatform; href: string }[] {
+  return contactChannels(values).filter((channel) => isSocial(channel.kind))
+    .map(({ kind, value }) => ({ platform: kind as SocialPlatform, href: contactHref(kind, value) }));
 }
 
 /** The delivery and returns pages stay hidden until they have text. */

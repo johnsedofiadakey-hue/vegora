@@ -365,7 +365,7 @@ a { color:inherit; text-decoration:none; }
   .closing-statement h2 { font-size:clamp(53px,10vw,74px); }
   .footer-top { display:block; padding-bottom:80px; }
   .footer-wordmark { width:200px; }
-  .footer-links { margin-top:65px; gap:60px; }
+  .footer-links { margin-top:65px; gap:48px 60px; flex-wrap:wrap; }
   .footer-bottom { gap:16px; flex-wrap:wrap; }
   .collection-banner { display:flex; flex-direction:column-reverse; }
   .collection-banner-image { min-height:105vw; }

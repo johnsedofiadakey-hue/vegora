@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { contactChannels, contactHref, paragraphs } from "@/lib/site-content";
+import { contactChannels, contactDisplay, contactHref, isSocial, paragraphs } from "@/lib/site-content";
 import { getContent } from "@/lib/server/site-content-cache";
 
 export const metadata: Metadata = { title: "Contact" };
 
-const channelLabel = { email: "Email", phone: "Phone", whatsapp: "WhatsApp", instagram: "Instagram" } as const;
+const channelLabel = { email: "Email", phone: "Phone", whatsapp: "WhatsApp", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", x: "X" } as const;
 
 export default async function ContactPage() {
   const content = await getContent("contact");
@@ -16,8 +16,8 @@ export default async function ContactPage() {
     <h1>Get in touch.</h1>
     {paragraphs(content.intro).map((text) => <p key={text}>{text}</p>)}
     <div className="policy-contact">{channels.map(({ kind, value }) =>
-      <a key={kind} href={contactHref(kind, value)} {...(kind === "whatsapp" || kind === "instagram" ? { target: "_blank", rel: "noreferrer" } : {})}>
-        <span>{channelLabel[kind]}</span>{kind === "instagram" ? `@${value}` : value}
+      <a key={kind} href={contactHref(kind, value)} {...(kind === "whatsapp" || isSocial(kind) ? { target: "_blank", rel: "noreferrer" } : {})}>
+        <span>{channelLabel[kind]}</span>{contactDisplay(kind, value)}
       </a>)}</div>
     {content.hours && <p className="policy-hours">{content.hours}</p>}
   </div>;
