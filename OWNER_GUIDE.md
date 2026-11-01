@@ -2,13 +2,14 @@
 
 A plain-language guide for the person who looks after the shop. You do not need to know anything about code.
 
-Everything is done in the **Studio admin** at the website address followed by `/admin`, for example `https://vegora--vegoragh.europe-west4.hosted.app/admin`. It has three tabs: **Products**, **Orders** and **Content**.
+Everything is done in the **Studio admin** at the website address followed by `/admin`, for example `https://vegora--vegoragh.europe-west4.hosted.app/admin`. It has four tabs: **Products**, **Orders**, **Content** and **Sign-ups**.
 
 ## Where things stand today
 
 - The shop window is live: customers can browse and read about the pieces.
 - **Nobody can buy yet.** Checkout is closed on purpose until payment testing, delivery prices and the real catalogue are ready. Everything below about orders describes how it will work once checkout opens.
 - The seven T-shirts on the site are **previews**: their GH₵100 price is only a placeholder, and they have no sizes or stock.
+- The home page is the opening photograph, a short introduction and then the **new arrivals** (up to eight products), followed straight by the footer. The arrivals are your products that are ticked **New arrival**, so there is nothing to update on the Homepage section except its words.
 - The shop does **not send emails yet**. Once orders start, you will need to open the Orders tab to see them.
 
 ## Signing in
@@ -53,12 +54,23 @@ Things to know:
 - Text is plain: no bold or links inside paragraphs. Separate paragraphs with a blank line.
 - Every photo needs a short description (for people who cannot see it). When you upload a new photo you must write a new description.
 - Sections have length limits and show a counter. Short, confident lines look best.
+- **Homepage:** the opening words, the short introduction, and the heading and sentence above the new arrivals. The arrivals themselves come from Products (tick **New arrival**).
 - **Announcement bar:** a single line above the menu on every page. Switch it on, write the message, and publish. Switch it off the same way.
 - **Delivery, Returns, Privacy and Terms** pages stay hidden, and are not linked from the footer, until you publish text for them. Use wording you or your adviser have approved. Do not copy another shop's policy.
 - **Contact and footer:** fill in the channels you actually answer (email, phone, WhatsApp, Instagram). A Contact page and footer link appear once at least one is filled in.
 - There is **no preview yet**: publish, then look at the live page. If you do not like it, load the earlier version and publish again.
 
 Changes appear within about half a minute. If you do not see a change, refresh the page once more after waiting.
+
+## Sign-ups
+
+The footer of every page has a small form beside the VEGORA logo. Visitors tick what they want to hear about (new deals, customization, bulk orders, something else), give their email, and may add a name, phone number and a note. Open the **Sign-ups** tab to see them.
+
+- Filter by interest, **Copy emails** to paste into your email program, or **Download spreadsheet** to open in Excel or Google Sheets.
+- **Remove** takes someone off the list (it asks you to confirm). Do this if a person asks you to delete their details.
+- The same person signing up again is merged into one entry, with their new interests added.
+- **Nothing is emailed to them automatically.** You contact them yourself. Only write to people about what they ticked.
+- Because this collects personal details, publish your **Privacy policy** text (Content tab). The form links to it once it is live.
 
 ## Orders
 

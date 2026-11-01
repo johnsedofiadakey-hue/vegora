@@ -1,11 +1,15 @@
 # VEGORA handoff for Claude
 
+## Update (1 November 2026): home page and footer sign-ups (NOT yet committed or deployed unless the plan file says so)
+
+Full handover with checkboxes and a progress log: `PLAN_HOME_ARRIVALS_AND_SIGNUPS.md`. In short: the home page is now hero, short introduction and **new arrivals** (products tagged `new_arrival`), then the footer; the collections / first pieces / edit / closing sections and the featured-pieces picker were removed. The footer has a sign-up form (deals, customization, bulk orders, other) saving to Firestore `signups`, managed in a new admin **Sign-ups** tab (contracts in `ADMIN_SETUP.md`). The site is served on `https://www.shopvegora.com` (bare domain redirects); `apphosting.yaml` now sets `VEGORA_SITE_URL` to it, which takes effect on the next deploy. Do not push or deploy without the user's go-ahead.
+
 ## Status update (31 October 2026, evening). Read this first
 
 It replaces the "Current snapshot" below wherever they differ.
 
 **Built and deployed** (see `ADMIN_SETUP.md` for the contracts, `OWNER_GUIDE.md` for the owner):
-- Admin with Products, Orders and **Content** tabs. Manual delivery workflow (preparing, dispatched, delivered, one-step undo, internal notes), `/track` with a short order number (`VG-7K2M9QXA`) plus email, and a CMS of nine sections (announcement bar, homepage, The Edit, About, contact and footer, delivery, returns, privacy, terms). Policy pages stay hidden until they have text.
+- Admin with Products, Orders, **Content** and **Sign-ups** tabs. Manual delivery workflow (preparing, dispatched, delivered, one-step undo, internal notes), `/track` with a short order number (`VG-7K2M9QXA`) plus email, and a CMS of nine sections (announcement bar, homepage, The Edit, About, contact and footer, delivery, returns, privacy, terms). Policy pages stay hidden until they have text.
 - Hardening: Firestore point-in-time recovery (7 days), rate limits on tracking and checkout, cron secret and the five-minute `vegora-expire-orders` Scheduler job, uptime checks and email alerts (Cloud Monitoring, sent to the project owner), a photo route (`/api/image`), and SEO (sitemap, robots, share previews, product markup) that is **closed to search engines until `VEGORA_ALLOW_INDEXING=true`**.
 - Phone path to checkout: sticky add-to-bag bar, bag count in the header, no pre-selected delivery area.
 
