@@ -1,37 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
-import type { Product, ProductInput, ProductStatus, ProductTag, Audience } from "@/lib/catalog";
-import { formatGhs } from "@/lib/catalog";
+import type { Product, ProductInput, ProductStatus } from "@/lib/catalog";
 import { adminAuth } from "@/lib/admin-client";
-import { ProductAssetsEditor } from "./product-assets-editor";
-import { FulfillmentEditor } from "./fulfillment-editor";
+import { autoSku } from "./product-assets-editor";
 import { ContentEditor } from "./content-editor";
 import { SignupsPanel } from "./signups-panel";
-import { shortOrderCode, type Fulfillment, type FulfillmentEvent, type FulfillmentInput } from "@/lib/fulfillment";
+import { StudioNav, type StudioView } from "./studio-nav";
+import { ProductEditor, ProductGrid } from "./products-view";
+import { OrdersView, needsDelivery, type AdminOrder } from "./orders-view";
+import type { FulfillmentEvent, FulfillmentInput } from "@/lib/fulfillment";
 import styles from "./admin.module.css";
+import studio from "./studio.module.css";
 
 const emptyProduct: ProductInput = {
   slug: "", name: "", description: "", audience: "men", category: "",
   priceMinor: null, currency: "GHS", images: [], variants: [], status: "draft", featured: false, tags: ["new_arrival"],
 };
-
-interface AdminOrder {
-  reference: string;
-  status: string;
-  email: string;
-  customer: { name: string; phone: string };
-  delivery: { zoneLabel: string; addressLine1: string; addressLine2: string; city: string; region: string; notes: string };
-  lines: { name: string; size: string; sku: string; quantity: number; lineTotalMinor: number }[];
-  subtotalMinor: number;
-  deliveryFeeMinor: number;
-  totalMinor: number;
-  createdAt: string;
-  paidAt: string | null;
-  fulfillment?: Fulfillment;
-}
 
 export default function AdminPage() {
   const auth = useMemo(() => adminAuth(), []);
@@ -41,7 +28,10 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [view, setView] = useState<"products" | "orders" | "content" | "signups">("products");
+  const [view, setView] = useState<StudioView>("products");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [productOpen, setProductOpen] = useState(false);
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
   // Mounted on first visit and then kept, so unsaved content edits survive switching tabs.
   const [contentVisited, setContentVisited] = useState(false);
   const [signupsVisited, setSignupsVisited] = useState(false);
@@ -110,6 +100,7 @@ export default function AdminPage() {
 
   async function selectOrder(reference: string) {
     setSelectedOrder(reference);
+    setOrderDetailOpen(true);
     setOrderEvents([]);
     try { await loadOrderEvents(reference); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Unable to load order updates"); }
@@ -141,29 +132,34 @@ export default function AdminPage() {
     } finally { setBusy(false); }
   }
 
-  async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setMessage("");
+  async function saveProduct(status: ProductStatus) {
+    setBusy(true); setMessage("");
+    // Sizes left without a stock code get one made from the web address and size.
+    const product: ProductInput = { ...editing, status,
+      variants: editing.variants.map((variant) => ({ ...variant, sku: variant.sku.trim() || autoSku(editing.slug, variant.size) })) };
     try {
       const path = originalSlug ? `/api/admin/products/${originalSlug}` : "/api/admin/products";
       await adminFetch(path, {
         method: originalSlug ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editing),
+        body: JSON.stringify(product),
       });
-      setMessage("Product saved.");
-      setOriginalSlug(editing.slug);
+      setEditing(product);
+      setOriginalSlug(product.slug);
       await loadProducts();
-      setMessage("Product saved.");
+      setMessage(status === "published" && editing.status !== "published" ? "Published. It is now live in the shop."
+        : status === "draft" && editing.status === "published" ? "Hidden from the shop. It is now a draft."
+          : status === "draft" && editing.status === "archived" ? "Restored as a draft." : "Changes saved.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save product"); }
     finally { setBusy(false); }
   }
 
   async function archive() {
-    if (!originalSlug || !window.confirm(`Archive ${editing.name}? It will disappear from the storefront.`)) return;
+    if (!originalSlug) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/products/${originalSlug}`, { method: "DELETE" });
-      setEditing({ ...emptyProduct }); setOriginalSlug(null);
+      setEditing({ ...emptyProduct }); setOriginalSlug(null); setProductOpen(false);
       await loadProducts(); setMessage("Product archived.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to archive product"); }
     finally { setBusy(false); }
@@ -221,37 +217,40 @@ export default function AdminPage() {
       status: product.status, featured: product.featured,
       tags: product.tags ?? [],
     });
-    setMessage(""); window.scrollTo({ top: 0, behavior: "smooth" });
+    setProductOpen(true);
+    setMessage(""); window.scrollTo({ top: 0 });
   }
 
-  if (!ready) return <main className={styles.shell}>Loading admin…</main>;
+  function newProduct() {
+    if (busy) return;
+    setEditing({ ...emptyProduct }); setOriginalSlug(null); setProductOpen(true);
+    setMessage(""); window.scrollTo({ top: 0 });
+  }
+
+  const selectView = useCallback((next: StudioView) => {
+    if (next === "content") setContentVisited(true);
+    if (next === "signups") setSignupsVisited(true);
+    setView(next); setMessage(""); window.scrollTo({ top: 0 });
+  }, []);
+
+  if (!ready) return <main className={styles.shell}><p className={studio.loading}>Loading studio…</p></main>;
   if (!auth) return <main className={styles.shell}><div className={styles.login}><div className={styles.wordmark}>VEGORA</div><h1>Admin setup needed</h1><p>Firebase client configuration is missing. See the project setup notes before signing in.</p><Link href="/">Return to store</Link></div></main>;
   if (!user) return <main className={styles.shell}><form className={styles.login} onSubmit={signIn}><div className={styles.wordmark}>VEGORA</div><p className={styles.eyebrow}>PRIVATE STUDIO</p><h1>Sign in</h1><label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required /></label><label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label><button disabled={busy}>Enter admin</button>{message && <p role="alert" className={styles.message}>{message}</p>}<Link href="/">Return to store</Link></form></main>;
 
-  return <main className={styles.shell}>
-    <header className={styles.header}><div><Link href="/" className={styles.wordmark}>VEGORA</Link><span>STUDIO ADMIN</span></div><button className={styles.textButton} onClick={() => signOut(auth)}>Sign out</button></header>
-    <nav className={styles.tabs} aria-label="Admin sections"><button className={view === "products" ? styles.activeTab : ""} onClick={() => setView("products")}>Products</button><button className={view === "orders" ? styles.activeTab : ""} onClick={() => setView("orders")}>Orders</button><button className={view === "content" ? styles.activeTab : ""} onClick={() => { setContentVisited(true); setView("content"); }}>Content</button><button className={view === "signups" ? styles.activeTab : ""} onClick={() => { setSignupsVisited(true); setView("signups"); }}>Sign-ups</button></nav>
-    {view === "content" || view === "signups" ? null : view === "orders" ? <div className={styles.ordersLayout}>
-      <aside className={styles.sidebar}><p className={styles.eyebrow}>ORDER DESK</p><h2>Orders <span>{orders.length}</span></h2><button className={styles.newButton} onClick={loadOrders}>Refresh orders</button><div className={styles.productList}>{orders.map((order) => <button key={order.reference} className={selectedOrder === order.reference ? styles.selected : ""} onClick={() => void selectOrder(order.reference)}><strong>{order.customer.name}</strong><small>{order.status.replaceAll("_", " ")} · {order.fulfillment?.status.replaceAll("_", " ") ?? "unfulfilled"} · {formatGhs(order.totalMinor)}</small></button>)}</div><p className={styles.sideNote}>Paid status requires server-side Paystack verification. Delivery progress is updated manually after payment is confirmed.</p></aside>
-      <section className={styles.editor}>{message && <p role="status" className={styles.message}>{message}</p>}{(() => { const order = orders.find((item) => item.reference === selectedOrder) ?? orders[0]; return order ? <><p className={styles.eyebrow}>ORDER {shortOrderCode(order.reference) ?? order.reference} · {order.reference}</p><h1 className={styles.orderTitle}>{order.customer.name}</h1><p className={styles.orderStatus}>{order.status.replaceAll("_", " ")}</p><p className={styles.orderMeta}>Placed {new Date(order.createdAt).toLocaleString("en-GH")}{order.paidAt ? ` · Paid ${new Date(order.paidAt).toLocaleString("en-GH")}` : ""}</p><div className={styles.orderBlock}><h2>Items</h2>{order.lines.map((line) => <div className={styles.orderRow} key={`${line.sku}-${line.size}`}><span>{line.name} · {line.size} × {line.quantity}<small>{line.sku}</small></span><strong>{formatGhs(line.lineTotalMinor)}</strong></div>)}<div className={styles.orderRow}><span>Subtotal</span><strong>{formatGhs(order.subtotalMinor)}</strong></div><div className={styles.orderRow}><span>Delivery</span><strong>{formatGhs(order.deliveryFeeMinor)}</strong></div><div className={styles.orderRow}><span>Total</span><strong>{formatGhs(order.totalMinor)}</strong></div></div><div className={styles.orderBlock}><h2>Customer & delivery</h2><p>{order.email}<br />{order.customer.phone}</p><p>{order.delivery.addressLine1}{order.delivery.addressLine2 ? `, ${order.delivery.addressLine2}` : ""}<br />{order.delivery.city}, {order.delivery.region}<br />{order.delivery.zoneLabel}</p>{order.delivery.notes && <p>Note: {order.delivery.notes}</p>}</div><div className={styles.orderBlock}><FulfillmentEditor key={`${order.reference}-${order.fulfillment?.updatedAt ?? "new"}`} order={order} busy={busy} onSave={saveFulfillment} />{orderEvents.length > 0 && <div className={styles.fulfillmentHistory}><h2>Delivery updates</h2><ol>{orderEvents.map((event) => <li key={`${event.at}-${event.status}-${event.kind ?? "advance"}`}><strong>{event.status.replaceAll("_", " ")}</strong>{event.kind === "rollback" && <em>Moved back</em>}{event.kind === "update" && <em>Details updated</em>}<span>{new Date(event.at).toLocaleString("en-GH")}</span>{event.trackingReference && <small>{event.provider} · {event.trackingReference}</small>}{event.note && <q>{event.note}</q>}</li>)}</ol></div>}</div></> : <><p className={styles.eyebrow}>ORDER DESK</p><h1 className={styles.orderTitle}>No orders yet</h1><p>Orders will appear after test checkout is configured and used.</p></>; })()}</section>
-    </div> :
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}><p className={styles.eyebrow}>CATALOG</p><h2>Products <span>{products.length}</span></h2><button className={styles.newButton} disabled={busy} onClick={() => { setEditing({ ...emptyProduct }); setOriginalSlug(null); setMessage(""); }}>+ New product</button><button className={styles.newButton} disabled={busy} onClick={importPreviewProducts}>Import seven preview styles</button><div className={styles.productList}>{products.map((product) => <button key={product.id} disabled={busy} className={product.slug === originalSlug ? styles.selected : ""} onClick={() => selectProduct(product)}><strong>{product.name}</strong><small>{product.status} · {formatGhs(product.priceMinor)}</small></button>)}</div><p className={styles.sideNote}>Import creates editable drafts with no sizes or stock. Existing products stay unchanged.</p></aside>
-      <section className={styles.editor}><div className={styles.editorTop}><div><p className={styles.eyebrow}>PRODUCT DETAILS</p><h1>{originalSlug ? "Edit product" : "New product"}</h1></div><span className={styles.status}>{editing.status}</span></div>
-        {message && <p role="status" className={styles.message}>{message}</p>}
-        <form onSubmit={saveProduct}>
-          <div className={styles.grid}><label>Name<input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} maxLength={140} required /></label><label>Slug<input value={editing.slug} onChange={(e) => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })} disabled={!!originalSlug} placeholder="linen-wide-leg-trouser" required /></label></div>
-          <label>Description<textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={5} maxLength={5000} /></label>
-          <div className={styles.grid}><label>Collection<select value={editing.audience} onChange={(e) => setEditing({ ...editing, audience: e.target.value as Audience })}><option value="women">Women</option><option value="men">Men</option><option value="unisex">Unisex</option></select></label><label>Category<input value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} placeholder="Tailoring" required /></label></div>
-          <div className={styles.grid}><label>Price (GHS)<input type="number" min="0" step="0.01" value={editing.priceMinor === null ? "" : (editing.priceMinor / 100).toFixed(2)} onChange={(e) => setEditing({ ...editing, priceMinor: e.target.value === "" ? null : Math.round(Number(e.target.value) * 100) })} placeholder="0.00" /></label><label>Status<select value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value as ProductStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label></div>
-          <label className={styles.checkbox}><input type="checkbox" checked={editing.featured} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} /> Feature on storefront</label>
-          <div className={styles.tagsField} role="group" aria-label="Product tags"><span>Product tags</span><div>{([ ["new_arrival", "New arrival"], ["best_seller", "Best seller"] ] as [ProductTag, string][]).map(([tag, label]) => <label key={tag} className={styles.checkbox}><input type="checkbox" checked={editing.tags.includes(tag)} onChange={(e) => setEditing({ ...editing, tags: e.target.checked ? [...editing.tags, tag] : editing.tags.filter((item) => item !== tag) })} /> {label}</label>)}</div><small>Tags appear on product cards. Only tagged pieces appear in New In.</small></div>
-          <ProductAssetsEditor product={editing} onChange={setEditing} onUpload={uploadImages} busy={busy} />
-          <div className={styles.actions}><button type="submit" disabled={busy}>{busy ? "Working…" : "Save product"}</button>{originalSlug && <button type="button" className={styles.archive} onClick={archive} disabled={busy}>Archive</button>}</div>
-        </form>
-      </section>
-    </div>}
-    {contentVisited && <div hidden={view !== "content"}><ContentEditor adminFetch={adminFetch} /></div>}
-    {signupsVisited && <div hidden={view !== "signups"}><SignupsPanel adminFetch={adminFetch} /></div>}
+  return <main className={`${styles.shell} ${studio.app}`}>
+    <StudioNav view={view} onSelect={selectView} open={menuOpen} onOpenChange={setMenuOpen}
+      ordersToHandle={orders.filter(needsDelivery).length} email={user.email ?? ""} onSignOut={() => void signOut(auth)} />
+    <div className={studio.main}>
+      {view === "products" && (productOpen
+        ? <ProductEditor key={originalSlug ?? "new"} editing={editing} setEditing={setEditing} isNew={!originalSlug} message={message} busy={busy}
+          onSave={saveProduct} onArchive={archive} onUpload={uploadImages} onBack={() => { setProductOpen(false); setMessage(""); }} />
+        : <>{message && <div className={studio.pageMessage}><p role="status" className={styles.message}>{message}</p></div>}
+          <ProductGrid products={products} busy={busy} onSelect={selectProduct} onNew={newProduct} onImport={() => void importPreviewProducts()} /></>)}
+      {view === "orders" && <OrdersView orders={orders} products={products} selected={selectedOrder} detailOpen={orderDetailOpen} events={orderEvents}
+        message={message} busy={busy} onSelect={(reference) => void selectOrder(reference)} onBack={() => setOrderDetailOpen(false)}
+        onRefresh={() => void loadOrders()} onSaveFulfillment={saveFulfillment} />}
+      {contentVisited && <div hidden={view !== "content"}><ContentEditor adminFetch={adminFetch} /></div>}
+      {signupsVisited && <div hidden={view !== "signups"}><SignupsPanel adminFetch={adminFetch} /></div>}
+    </div>
   </main>;
 }
