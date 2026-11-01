@@ -16,7 +16,9 @@ It replaces the "Current snapshot" below wherever they differ.
 4. Optional: CMS draft preview, "notify me" signup, delivery estimate in the bag, mobile money shown at checkout.
 5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`. When checkout opens, also **remove the `/api/checkout/zones` 503 exclusion from the "VEGORA server errors" alert policy** (it exists only because the closed checkout answers 503 on every bag visit).
 
-**Not yet verified on the live site:** publishing through the live admin (needs the owner's sign-in), the photo route's resizing on Cloud Run, and the alert emails. A real order has never gone end to end.
+**Verified on the live site (1 November 2026, with the owner signed in):** the Content tab reads all nine sections from the real database; save draft leaves the site unchanged; publish with confirmation reaches every shop page within seconds; restoring the original wording works; loading an earlier version into the draft leaves the site unchanged; discard clears it. The photo route resizes on Cloud Run, the expiry job returns 200 every five minutes, and both uptime checks pass. The `contact` section now shows as published with its built-in wording (two revisions in its history).
+
+**Not yet verified on the live site:** that the alert emails actually arrive, and a real order end to end (needs the Paystack key). Products have only been exercised through the admin earlier, not since the latest deploys.
 
 **Things that cost time, so you do not repeat them**
 - **App Hosting does not serve `/_next/image`.** Photographs go through our own route via the custom loader in `next.config.ts`. It looked fine locally and was a 404 live. Always check the live site, not only `next start`.
