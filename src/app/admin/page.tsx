@@ -9,6 +9,7 @@ import { adminAuth } from "@/lib/admin-client";
 import { ProductAssetsEditor } from "./product-assets-editor";
 import { FulfillmentEditor } from "./fulfillment-editor";
 import { ContentEditor } from "./content-editor";
+import { SignupsPanel } from "./signups-panel";
 import { shortOrderCode, type Fulfillment, type FulfillmentEvent, type FulfillmentInput } from "@/lib/fulfillment";
 import styles from "./admin.module.css";
 
@@ -40,9 +41,10 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [view, setView] = useState<"products" | "orders" | "content">("products");
+  const [view, setView] = useState<"products" | "orders" | "content" | "signups">("products");
   // Mounted on first visit and then kept, so unsaved content edits survive switching tabs.
   const [contentVisited, setContentVisited] = useState(false);
+  const [signupsVisited, setSignupsVisited] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [orderEvents, setOrderEvents] = useState<FulfillmentEvent[]>([]);
   const [editing, setEditing] = useState<ProductInput>({ ...emptyProduct });
@@ -228,8 +230,8 @@ export default function AdminPage() {
 
   return <main className={styles.shell}>
     <header className={styles.header}><div><Link href="/" className={styles.wordmark}>VEGORA</Link><span>STUDIO ADMIN</span></div><button className={styles.textButton} onClick={() => signOut(auth)}>Sign out</button></header>
-    <nav className={styles.tabs} aria-label="Admin sections"><button className={view === "products" ? styles.activeTab : ""} onClick={() => setView("products")}>Products</button><button className={view === "orders" ? styles.activeTab : ""} onClick={() => setView("orders")}>Orders</button><button className={view === "content" ? styles.activeTab : ""} onClick={() => { setContentVisited(true); setView("content"); }}>Content</button></nav>
-    {view === "content" ? null : view === "orders" ? <div className={styles.ordersLayout}>
+    <nav className={styles.tabs} aria-label="Admin sections"><button className={view === "products" ? styles.activeTab : ""} onClick={() => setView("products")}>Products</button><button className={view === "orders" ? styles.activeTab : ""} onClick={() => setView("orders")}>Orders</button><button className={view === "content" ? styles.activeTab : ""} onClick={() => { setContentVisited(true); setView("content"); }}>Content</button><button className={view === "signups" ? styles.activeTab : ""} onClick={() => { setSignupsVisited(true); setView("signups"); }}>Sign-ups</button></nav>
+    {view === "content" || view === "signups" ? null : view === "orders" ? <div className={styles.ordersLayout}>
       <aside className={styles.sidebar}><p className={styles.eyebrow}>ORDER DESK</p><h2>Orders <span>{orders.length}</span></h2><button className={styles.newButton} onClick={loadOrders}>Refresh orders</button><div className={styles.productList}>{orders.map((order) => <button key={order.reference} className={selectedOrder === order.reference ? styles.selected : ""} onClick={() => void selectOrder(order.reference)}><strong>{order.customer.name}</strong><small>{order.status.replaceAll("_", " ")} · {order.fulfillment?.status.replaceAll("_", " ") ?? "unfulfilled"} · {formatGhs(order.totalMinor)}</small></button>)}</div><p className={styles.sideNote}>Paid status requires server-side Paystack verification. Delivery progress is updated manually after payment is confirmed.</p></aside>
       <section className={styles.editor}>{message && <p role="status" className={styles.message}>{message}</p>}{(() => { const order = orders.find((item) => item.reference === selectedOrder) ?? orders[0]; return order ? <><p className={styles.eyebrow}>ORDER {shortOrderCode(order.reference) ?? order.reference} · {order.reference}</p><h1 className={styles.orderTitle}>{order.customer.name}</h1><p className={styles.orderStatus}>{order.status.replaceAll("_", " ")}</p><p className={styles.orderMeta}>Placed {new Date(order.createdAt).toLocaleString("en-GH")}{order.paidAt ? ` · Paid ${new Date(order.paidAt).toLocaleString("en-GH")}` : ""}</p><div className={styles.orderBlock}><h2>Items</h2>{order.lines.map((line) => <div className={styles.orderRow} key={`${line.sku}-${line.size}`}><span>{line.name} · {line.size} × {line.quantity}<small>{line.sku}</small></span><strong>{formatGhs(line.lineTotalMinor)}</strong></div>)}<div className={styles.orderRow}><span>Subtotal</span><strong>{formatGhs(order.subtotalMinor)}</strong></div><div className={styles.orderRow}><span>Delivery</span><strong>{formatGhs(order.deliveryFeeMinor)}</strong></div><div className={styles.orderRow}><span>Total</span><strong>{formatGhs(order.totalMinor)}</strong></div></div><div className={styles.orderBlock}><h2>Customer & delivery</h2><p>{order.email}<br />{order.customer.phone}</p><p>{order.delivery.addressLine1}{order.delivery.addressLine2 ? `, ${order.delivery.addressLine2}` : ""}<br />{order.delivery.city}, {order.delivery.region}<br />{order.delivery.zoneLabel}</p>{order.delivery.notes && <p>Note: {order.delivery.notes}</p>}</div><div className={styles.orderBlock}><FulfillmentEditor key={`${order.reference}-${order.fulfillment?.updatedAt ?? "new"}`} order={order} busy={busy} onSave={saveFulfillment} />{orderEvents.length > 0 && <div className={styles.fulfillmentHistory}><h2>Delivery updates</h2><ol>{orderEvents.map((event) => <li key={`${event.at}-${event.status}-${event.kind ?? "advance"}`}><strong>{event.status.replaceAll("_", " ")}</strong>{event.kind === "rollback" && <em>Moved back</em>}{event.kind === "update" && <em>Details updated</em>}<span>{new Date(event.at).toLocaleString("en-GH")}</span>{event.trackingReference && <small>{event.provider} · {event.trackingReference}</small>}{event.note && <q>{event.note}</q>}</li>)}</ol></div>}</div></> : <><p className={styles.eyebrow}>ORDER DESK</p><h1 className={styles.orderTitle}>No orders yet</h1><p>Orders will appear after test checkout is configured and used.</p></>; })()}</section>
     </div> :
@@ -250,5 +252,6 @@ export default function AdminPage() {
       </section>
     </div>}
     {contentVisited && <div hidden={view !== "content"}><ContentEditor adminFetch={adminFetch} /></div>}
+    {signupsVisited && <div hidden={view !== "signups"}><SignupsPanel adminFetch={adminFetch} /></div>}
   </main>;
 }

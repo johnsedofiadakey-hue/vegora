@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Wordmark } from "./wordmark";
+import { FooterSignup } from "./footer-signup";
 import { WomenOnly } from "./collection-availability";
 import { getContent } from "@/lib/server/site-content-cache";
 import { contactChannels, policyIsLive } from "@/lib/site-content";
@@ -13,6 +14,7 @@ export async function SiteFooter() {
       <div>
         <Wordmark inverse className="footer-wordmark" />
         <p>{contact.footerTagline}</p>
+        <FooterSignup privacyHref={policyIsLive(privacy) ? "/privacy" : null} />
       </div>
       <div className="footer-links">
         <div><span>Explore</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>

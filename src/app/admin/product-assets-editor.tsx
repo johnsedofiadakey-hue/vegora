@@ -61,7 +61,7 @@ export function ProductAssetsEditor({ product, onChange, onUpload, busy }: Props
       <div className={styles.headingRow}>
         <div><p className={styles.eyebrow}>VISUALS</p><h2 id="product-images-heading">Product images</h2></div>
         <button type="button" className={styles.outlineButton} disabled={busy || product.images.length >= 12} onClick={() => fileInput.current?.click()}>+ Add photographs</button>
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className={styles.fileInput} aria-label="Choose product photographs" onChange={(event) => {
+        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple hidden aria-label="Choose product photographs" onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
           if (files.length) void onUpload(files);
           event.target.value = "";
