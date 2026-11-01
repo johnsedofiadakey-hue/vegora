@@ -14,7 +14,7 @@ It replaces the "Current snapshot" below wherever they differ.
 2. Decisions: a mail service and sender address for order emails, cancel and refund rules, tax. Live payments need a separate implementation, review and the owner's approval (the code rejects live keys).
 3. Owner content: real names, prices, sizes, stock, women's products, policy text, contact details, custom domain.
 4. Optional: CMS draft preview, "notify me" signup, delivery estimate in the bag, mobile money shown at checkout.
-5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`.
+5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`. When checkout opens, also **remove the `/api/checkout/zones` 503 exclusion from the "VEGORA server errors" alert policy** (it exists only because the closed checkout answers 503 on every bag visit).
 
 **Not yet verified on the live site:** publishing through the live admin (needs the owner's sign-in), the photo route's resizing on Cloud Run, and the alert emails. A real order has never gone end to end.
 
