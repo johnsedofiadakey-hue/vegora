@@ -1,0 +1,79 @@
+Last updated: [FILL IN: date you publish]
+
+This policy explains what personal information VEGORA collects when you visit www.shopvegora.com, place an order or sign up for updates, why we collect it, who we share it with, how long we keep it, and the choices you have. We handle personal information in line with Ghana's Data Protection Act, 2012 (Act 843).
+
+1. Who we are
+
+VEGORA is a fashion brand selling clothing online in Ghana. The business responsible for your information is [FILL IN: registered business name], registered in Ghana under number [FILL IN: business registration number], of [FILL IN: business address]. You can reach us about anything in this policy at [FILL IN: contact email] or [FILL IN: phone or WhatsApp number].
+
+2. Information we collect
+
+When you place an order: your name, email address, phone number, delivery address (address lines, city and region), any delivery notes you add, and the items, sizes, quantities and prices in your order. We also keep the order number, the status of your payment and the delivery updates we record for your order.
+
+When you pay: payment is handled by Paystack, our payment provider. You enter your card or mobile money details on Paystack's secure page, not on our website. We never see or store your full card number, PIN or mobile money PIN. Paystack tells us whether the payment succeeded, the amount, the currency, the payment reference and the email address used.
+
+When you sign up in the footer form: your email address and the things you asked to hear about (new deals, customization, bulk orders or something else). If you choose to add them, also your name, phone or WhatsApp number and your message. If you sign up again with the same email, we update your existing entry.
+
+When you track an order: the order number and email address you type in, which we use only to find your order.
+
+When you browse: like any website, our servers receive technical information such as your IP address, browser type and the pages requested. We use it to keep the site working and to block abuse, for example too many attempts in a short time. The items in your bag are saved in your own browser so they are still there when you come back; they are not sent to us until you check out.
+
+We do not use advertising cookies or third-party analytics on this website, and we do not track you across other websites.
+
+3. Why we use your information
+
+We use your information to process and deliver your order, to contact you about your order, delivery, returns or refunds, and to answer your questions. This is necessary to carry out the purchase you asked for.
+
+We use sign-up details to contact you only about the things you ticked, such as new deals, customization or bulk orders. We do this because you agreed to it, and you can change your mind at any time.
+
+We use technical information and order records to protect the shop and our customers against fraud and misuse, to fix problems, and to keep the records that the law requires for accounting and tax.
+
+We do not sell, rent or trade your personal information, and we do not make decisions about you by automated means alone.
+
+4. Who we share it with
+
+We share only what each party needs to do its job:
+
+Paystack, to process your payment.
+
+Google Cloud (Firebase), which hosts our website and stores our order and sign-up records on our behalf.
+
+The delivery rider or courier who brings your order, who receives your name, phone number, delivery address and delivery notes.
+
+Professional advisers such as our accountant or lawyer, where needed, and public authorities where the law requires it.
+
+These providers may use your information only to provide their service to us, and they must keep it secure.
+
+5. Where your information is stored
+
+Our website and records are hosted by Google Cloud in the Netherlands, in the European Union. Paystack may process payment information in Ghana and in other countries where it operates. When your information is handled outside Ghana, we rely on providers that apply strong security and data protection standards, and we remain responsible for it.
+
+6. How long we keep it
+
+Order records, including your contact and delivery details, are kept for as long as the law requires us to keep business and tax records, currently [FILL IN: number of years, confirm with your accountant] years from the date of the order. After that we delete them.
+
+Sign-up details are kept until you ask us to remove them, or for [FILL IN: for example 24] months after you last signed up, whichever comes first.
+
+Technical server logs are deleted automatically after about 30 days. Backups of our database are overwritten within 7 days.
+
+7. How we protect it
+
+Our website is served only over a secure (HTTPS) connection. Order and sign-up records can be read only by our server and by authorised VEGORA staff who sign in to our private admin. Payment details are handled by Paystack and never stored by us. No method of storing or sending information is completely secure, but we take reasonable steps to protect yours and will act promptly if something goes wrong.
+
+8. Your rights
+
+You can ask us to tell you what personal information we hold about you and to give you a copy, to correct anything that is wrong or incomplete, to delete your information where we no longer need to keep it, or to stop using it to contact you about deals and updates. To do any of this, contact us using the details in section 1. We may need to confirm your identity first, and we will reply within [FILL IN: for example 21] days.
+
+If you are not satisfied with how we have handled your information, you can complain to the Data Protection Commission of Ghana (www.dataprotection.org.gh).
+
+9. Children
+
+Our shop is intended for adults. We do not knowingly collect information from children under 18. If you believe a child has given us their details, please contact us and we will delete them.
+
+10. Changes to this policy
+
+We may update this policy when our shop or the law changes. We will change the date at the top when we do. If a change is significant, we will make it clear on the website.
+
+11. Contact
+
+Questions or requests about your personal information: [FILL IN: contact email], [FILL IN: phone or WhatsApp number], [FILL IN: business address].
