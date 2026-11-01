@@ -102,7 +102,6 @@ export const blocks = {
       arrivalsLabel: { kind: "text", label: "New arrivals small heading", max: 60, required: true, default: "VEGORA / NEW IN" },
       arrivalsLead: { kind: "text", label: "New arrivals headline", max: 60, required: true, default: "The latest" },
       arrivalsEmphasis: { kind: "text", label: "New arrivals headline, italic line", max: 60, required: true, default: "arrivals." },
-      arrivalsBody: { kind: "paragraph", label: "New arrivals text", max: 300, required: true, default: "The latest pieces from VEGORA. Open a piece to choose your size and add it to your bag." },
       arrivalsLinkLabel: { kind: "text", label: "New arrivals link text", max: 40, required: true, default: "View all new in" },
     },
   }),

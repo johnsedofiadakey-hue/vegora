@@ -39,10 +39,10 @@ export default async function HomePage() {
 
     <section className="home-new-arrivals section-pad" aria-labelledby="home-arrivals-heading">
       <div className="home-new-arrivals-head">
-        <div><span className="eyebrow">{content.arrivalsLabel}</span><h2 id="home-arrivals-heading" data-reveal>{content.arrivalsLead}<br /><em>{content.arrivalsEmphasis}</em></h2></div>
-        <div className="home-new-arrivals-note"><p>{content.arrivalsBody}</p><Link href="/new-in" className="line-link">{`${content.arrivalsLinkLabel} `}<ArrowUpRight size={16} /></Link></div>
+        <div><span className="eyebrow">{content.arrivalsLabel}</span><h2 id="home-arrivals-heading" data-reveal>{content.arrivalsLead} <em>{content.arrivalsEmphasis}</em></h2></div>
+        <Link href="/new-in" className="line-link">{`${content.arrivalsLinkLabel} `}<ArrowUpRight size={16} /></Link>
       </div>
-      <CatalogCollection tag="new_arrival" limit={8} />
+      <CatalogCollection tag="new_arrival" limit={8} compact />
     </section>
     </div>
   </div>;

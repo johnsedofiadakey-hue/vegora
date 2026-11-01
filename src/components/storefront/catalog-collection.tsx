@@ -8,9 +8,11 @@ import { previewProducts } from "@/lib/preview-products";
 import { PreviewProductCard } from "./preview-product-card";
 import { WomenOnly } from "./collection-availability";
 
-type CatalogCollectionProps = { audience?: "women" | "men"; query?: string; tag?: "new_arrival" | "best_seller"; limit?: number };
+type CatalogCollectionProps = { audience?: "women" | "men"; query?: string; tag?: "new_arrival" | "best_seller"; limit?: number;
+  /** Leave out the preview heading, for pages that already introduce the grid. Cards still say "test price". */
+  compact?: boolean };
 
-export function CatalogCollection({ audience, query, tag, limit = 48 }: CatalogCollectionProps) {
+export function CatalogCollection({ audience, query, tag, limit = 48, compact = false }: CatalogCollectionProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
 
@@ -30,9 +32,10 @@ export function CatalogCollection({ audience, query, tag, limit = 48 }: CatalogC
     return () => controller.abort();
   }, [audience, query, tag]);
 
-  const previewMatches = previewProducts.filter((product) => {
+  // Previews (test prices, not for sale) only fill an empty collection; once real pieces are
+  // published there, customers see only what they can buy.
+  const previewMatches = state === "loading" || products.length > 0 ? [] : previewProducts.filter((product) => {
     if (audience && product.audience !== audience) return false;
-    if (state === "ready" && products.some((published) => published.slug === product.slug)) return false;
     if (tag && tag !== "new_arrival") return false;
     if (!query) return true;
     const search = `${product.name} ${product.category} ${product.description}`.toLocaleLowerCase();
@@ -42,7 +45,7 @@ export function CatalogCollection({ audience, query, tag, limit = 48 }: CatalogC
   return <>
     {state === "ready" && products.length > 0 && <div className="product-grid">{products.slice(0, limit).map((product) => <ProductCard key={product.id} product={product} />)}</div>}
     {previewMatches.length > 0 && <section className="preview-catalog" aria-label="Product previews">
-      <div className="preview-catalog-heading"><span>FROM THE STUDIO / MEN</span><h3>A first look at the pieces.</h3><p>These styles are in preview. GH₵100 is a test price; final prices, sizes, and availability will be confirmed before ordering opens.</p></div>
+      {!compact && <div className="preview-catalog-heading"><span>FROM THE STUDIO / MEN</span><h3>A first look at the pieces.</h3><p>These styles are in preview. GH₵100 is a test price; final prices, sizes, and availability will be confirmed before ordering opens.</p></div>}
       <div className="preview-product-grid">{previewMatches.slice(0, limit).map((product) => <PreviewProductCard key={product.slug} product={product} />)}</div>
     </section>}
     {state === "loading" && !previewMatches.length && <div className="catalog-message" role="status">Loading the collection…</div>}

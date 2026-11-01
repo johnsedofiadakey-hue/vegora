@@ -49,6 +49,8 @@ try {
     console.log(JSON.stringify({ ...state, layering }));
     if (width === 390) {
       if (await page.locator(".footer-admin-link").getAttribute("href") !== "/admin") throw new Error("Admin footer link is missing");
+      // Previews only fill an empty collection, so check them against an empty catalog whatever is published.
+      await page.route("**/api/products?*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ products: [] }) }));
       await page.getByRole("button", { name: "Open menu" }).click();
       await page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Men", exact: true }).click();
       await page.waitForURL(`${baseUrl}/men`);
