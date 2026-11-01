@@ -8,9 +8,9 @@ import { previewProducts } from "@/lib/preview-products";
 import { PreviewProductCard } from "./preview-product-card";
 import { WomenOnly } from "./collection-availability";
 
-type CatalogCollectionProps = { audience?: "women" | "men"; query?: string; tag?: "new_arrival" | "best_seller" };
+type CatalogCollectionProps = { audience?: "women" | "men"; query?: string; tag?: "new_arrival" | "best_seller"; limit?: number };
 
-export function CatalogCollection({ audience, query, tag }: CatalogCollectionProps) {
+export function CatalogCollection({ audience, query, tag, limit = 48 }: CatalogCollectionProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
 
@@ -40,10 +40,10 @@ export function CatalogCollection({ audience, query, tag }: CatalogCollectionPro
   });
 
   return <>
-    {state === "ready" && products.length > 0 && <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>}
+    {state === "ready" && products.length > 0 && <div className="product-grid">{products.slice(0, limit).map((product) => <ProductCard key={product.id} product={product} />)}</div>}
     {previewMatches.length > 0 && <section className="preview-catalog" aria-label="Product previews">
       <div className="preview-catalog-heading"><span>FROM THE STUDIO / MEN</span><h3>A first look at the pieces.</h3><p>These styles are in preview. GH₵100 is a test price; final prices, sizes, and availability will be confirmed before ordering opens.</p></div>
-      <div className="preview-product-grid">{previewMatches.map((product) => <PreviewProductCard key={product.slug} product={product} />)}</div>
+      <div className="preview-product-grid">{previewMatches.slice(0, limit).map((product) => <PreviewProductCard key={product.slug} product={product} />)}</div>
     </section>}
     {state === "loading" && !previewMatches.length && <div className="catalog-message" role="status">Loading the collection…</div>}
     {state === "unavailable" && !previewMatches.length && <div className="catalog-message" role="status"><span>THE COLLECTION</span><h2>Something beautiful is taking shape.</h2><p>VEGORA&apos;s online collection is being prepared. Explore the edit in the meantime.</p><Link href="/the-edit" className="line-link">View the edit →</Link></div>}

@@ -26,11 +26,11 @@ test("defaults are copies, so editing one never changes the built-in text", () =
   const a = defaultValues("home");
   a.heroLine1 = "Changed";
   a.heroImage.alt = "Changed";
-  a.arrivalsProducts.push("x");
+  a.heroImage.url = "/changed.png";
   const b = defaultValues("home");
   assert.equal(b.heroLine1, "The art");
   assert.notEqual(b.heroImage.alt, "Changed");
-  assert.equal(b.arrivalsProducts.length, 2);
+  assert.equal(b.heroImage.url, "/editorial/ve-man.png");
 });
 
 test("the homepage defaults keep today's wording", () => {
@@ -38,8 +38,9 @@ test("the homepage defaults keep today's wording", () => {
   assert.equal(home.heroLine1, "The art");
   assert.equal(home.heroLine2, "of dressing");
   assert.equal(home.introLead, "Considered style.");
-  assert.equal(home.closingHeading, "Elevate your style.");
-  assert.deepEqual(home.arrivalsProducts, ["navy-wide-stripe-tee", "black-fine-stripe-tee"]);
+  assert.equal(home.arrivalsLead, "The latest");
+  assert.equal(home.arrivalsEmphasis, "arrivals.");
+  assert.equal(home.arrivalsLinkLabel, "View all new in");
   assert.equal(defaultValues("about").body.split("\n\n").length, 2);
 });
 
@@ -93,17 +94,6 @@ test("images must be uploaded media or approved site photographs, with a descrip
   rejects(() => parseValues("edit", { image: { url: media } }));
   rejects(() => parseValues("edit", { image: "nope" }));
   rejects(() => parseValues("edit", { image: null }));
-});
-
-test("featured products are valid, unique slugs, at most two", () => {
-  assert.deepEqual(parseValues("home", { arrivalsProducts: [" Red-Stripe-Tee ", "grey-stripe-tee"] }).arrivalsProducts, ["red-stripe-tee", "grey-stripe-tee"]);
-  assert.deepEqual(parseValues("home", { arrivalsProducts: [] }).arrivalsProducts, []);
-  rejects(() => parseValues("home", { arrivalsProducts: ["a", "b", "c"] }));
-  rejects(() => parseValues("home", { arrivalsProducts: ["same", "same"] }));
-  rejects(() => parseValues("home", { arrivalsProducts: ["Not A Slug!"] }));
-  rejects(() => parseValues("home", { arrivalsProducts: [""] }));
-  rejects(() => parseValues("home", { arrivalsProducts: [5] }));
-  rejects(() => parseValues("home", { arrivalsProducts: "red-stripe-tee" }));
 });
 
 test("contact details are checked for their kind", () => {

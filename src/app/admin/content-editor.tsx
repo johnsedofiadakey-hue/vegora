@@ -35,8 +35,6 @@ interface BlockView {
   revisions?: RevisionView[];
 }
 
-interface ProductChoice { slug: string; name: string; status: string }
-
 type Notice = { kind: "ok" | "error"; text: string } | null;
 type Confirm = "publish" | "discard" | null;
 
@@ -90,7 +88,6 @@ export function ContentEditor({ adminFetch }: { adminFetch: AdminFetch }) {
   const [loadError, setLoadError] = useState("");
   const [selectedId, setSelectedId] = useState<BlockId | null>(null);
   const [edits, setEdits] = useState<Partial<Record<BlockId, ContentValues>>>({});
-  const [products, setProducts] = useState<ProductChoice[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
@@ -122,13 +119,6 @@ export function ContentEditor({ adminFetch }: { adminFetch: AdminFetch }) {
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    adminFetch("/api/admin/products").then((result) => {
-      const list = (result as { products: { slug: string; name: string; status: string }[] }).products;
-      setProducts(list.map(({ slug, name, status }) => ({ slug, name, status })));
-    }).catch(() => { /* The featured-pieces picker simply stays empty. */ });
-  }, [adminFetch]);
 
   const block = blocks?.find((item) => item.id === selectedId) ?? null;
   const values = block ? edits[block.id] ?? block.values : null;
@@ -327,25 +317,6 @@ export function ContentEditor({ adminFetch }: { adminFetch: AdminFetch }) {
             </div>
             <span className={styles.fieldHelp}>{field.help ? `${field.help} ` : ""}JPEG, PNG, WebP or AVIF under 8 MB. Use a web-sized image, ideally under 1 MB, so pages stay fast.</span>
           </div>
-        </div>;
-      }
-      case "products": {
-        const chosen = value as string[];
-        const max = field.max ?? 2;
-        const toggle = (slug: string) => {
-          if (chosen.includes(slug)) setField(field.key, chosen.filter((item) => item !== slug));
-          else if (chosen.length < max) setField(field.key, [...chosen, slug]);
-        };
-        const known = new Set(products.map((product) => product.slug));
-        return <div key={field.key} className={styles.chipField} role="group" aria-label={field.label}>
-          <strong>{label}</strong>
-          <div className={styles.chips}>
-            {products.map((product) => <button type="button" key={product.slug} aria-pressed={chosen.includes(product.slug)} disabled={busy || (!chosen.includes(product.slug) && chosen.length >= max)}
-              onClick={() => toggle(product.slug)}>{product.name}{product.status !== "published" ? ` (${product.status})` : ""}</button>)}
-            {chosen.filter((slug) => !known.has(slug)).map((slug) => <button type="button" key={slug} aria-pressed="true" disabled={busy} onClick={() => toggle(slug)}>{slug}</button>)}
-            {products.length === 0 && chosen.length === 0 && <span className={styles.fieldHelp}>No products yet.</span>}
-          </div>
-          <span className={styles.fieldHelp}>{field.help ? `${field.help} ` : ""}Choose up to {max}. Pieces that are not available yet show their supplied preview photograph.</span>
         </div>;
       }
     }

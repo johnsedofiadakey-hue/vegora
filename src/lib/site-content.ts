@@ -5,7 +5,7 @@
 // Content is plain text only. Nothing in a block is ever treated as HTML, and
 // links and images are restricted to the site's own pages and approved media.
 
-export type FieldKind = "text" | "paragraph" | "link" | "image" | "toggle" | "products" | "email" | "phone" | "handle";
+export type FieldKind = "text" | "paragraph" | "link" | "image" | "toggle" | "email" | "phone" | "handle";
 
 export interface ImageValue { url: string; alt: string }
 
@@ -15,7 +15,6 @@ export interface FieldValueByKind {
   link: string;
   image: ImageValue;
   toggle: boolean;
-  products: string[];
   email: string;
   phone: string;
   handle: string;
@@ -28,7 +27,7 @@ export type Field = {
     kind: K;
     label: string;
     help?: string;
-    /** Maximum characters, or maximum items for "products". */
+    /** Maximum characters. */
     max?: number;
     required?: boolean;
     default: FieldValueByKind[K];
@@ -76,7 +75,7 @@ export const blocks = {
   }),
   home: defineBlock({
     label: "Homepage",
-    description: "The opening screen, introduction, collections, first pieces, editorial section and closing line.",
+    description: "The opening screen, the introduction, and the heading above the new arrivals. The pieces themselves come from the catalogue: every published piece tagged New arrival appears there.",
     fields: {
       heroEyebrow: { kind: "text", label: "Hero small heading", max: 60, required: true, default: "VEGORA / A NEW PERSPECTIVE" },
       heroLine1: { kind: "text", label: "Hero headline, first line", max: 40, required: true, default: "The art" },
@@ -87,25 +86,11 @@ export const blocks = {
       introLead: { kind: "text", label: "Introduction headline", max: 60, required: true, default: "Considered style." },
       introEmphasis: { kind: "text", label: "Introduction headline, italic line", max: 60, required: true, default: "Distinct presence." },
       introBody: { kind: "text", label: "Introduction text", max: 200, required: true, default: "VEGORA explores the way we dress and the presence we bring to every room." },
-      collectionsLabel: { kind: "text", label: "Collections small heading", max: 60, required: true, default: "01 / EXPLORE" },
-      collectionsHeading: { kind: "text", label: "Collections heading", max: 60, required: true, default: "The collections" },
-      menTileImage: { kind: "image", label: "Men collection photograph", required: true, default: { url: "/editorial/ve-man-coat.png", alt: "Man in a black overcoat" } },
-      womenTileImage: { kind: "image", label: "Women collection photograph", required: true, help: "Shown only once a women's product has price, photo and stock.", default: { url: "/editorial/ve-woman-light.png", alt: "Woman in white tailored jacket" } },
-      arrivalsLabel: { kind: "text", label: "First pieces small heading", max: 60, required: true, default: "02 / THE FIRST PIECES" },
-      arrivalsLead: { kind: "text", label: "First pieces headline", max: 60, required: true, default: "A closer" },
-      arrivalsEmphasis: { kind: "text", label: "First pieces headline, italic line", max: 60, required: true, default: "look." },
-      arrivalsBody: { kind: "paragraph", label: "First pieces text", max: 300, required: true, default: "Meet the first striped pieces in the VEGORA collection. Explore the details while final prices and availability are being prepared." },
-      arrivalsLinkLabel: { kind: "text", label: "First pieces link text", max: 40, required: true, default: "View the preview collection" },
-      arrivalsProducts: { kind: "products", label: "Featured pieces", max: 2, default: ["navy-wide-stripe-tee", "black-fine-stripe-tee"], help: "Product slugs, up to two. Pieces that are not available are skipped." },
-      calloutImage: { kind: "image", label: "Editorial photograph", required: true, default: { url: "/editorial/ve-detail.png", alt: "Close-up of black tailoring and a white shirt cuff" } },
-      calloutLabel: { kind: "text", label: "Editorial small heading", max: 60, required: true, default: "03 / THE EDIT" },
-      calloutLead: { kind: "text", label: "Editorial headline", max: 60, required: true, default: "A study in" },
-      calloutEmphasis: { kind: "text", label: "Editorial headline, italic line", max: 60, required: true, default: "self-expression." },
-      calloutBody: { kind: "paragraph", label: "Editorial text", max: 300, required: true, default: "Discover the mood behind VEGORA: strong silhouettes, quiet detail, and the freedom to dress on your own terms." },
-      calloutLinkLabel: { kind: "text", label: "Editorial link text", max: 40, required: true, default: "Explore the edit" },
-      closingLabel: { kind: "text", label: "Closing small heading", max: 40, required: true, default: "VEGORA" },
-      closingHeading: { kind: "text", label: "Closing line", max: 60, required: true, default: "Elevate your style." },
-      closingButton: { kind: "text", label: "Closing button text", max: 40, required: true, default: "Explore new in" },
+      arrivalsLabel: { kind: "text", label: "New arrivals small heading", max: 60, required: true, default: "VEGORA / NEW IN" },
+      arrivalsLead: { kind: "text", label: "New arrivals headline", max: 60, required: true, default: "The latest" },
+      arrivalsEmphasis: { kind: "text", label: "New arrivals headline, italic line", max: 60, required: true, default: "arrivals." },
+      arrivalsBody: { kind: "paragraph", label: "New arrivals text", max: 300, required: true, default: "The latest pieces from VEGORA. Open a piece to choose your size and add it to your bag." },
+      arrivalsLinkLabel: { kind: "text", label: "New arrivals link text", max: 40, required: true, default: "View all new in" },
     },
   }),
   edit: defineBlock({
@@ -215,7 +200,6 @@ const bidiControls = /[‪-‮⁦-⁩]/;
 const markup = /<\/?[A-Za-z!][^>]*>/;
 const internalLink = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*){0,2})?$/;
 const mediaPath = /^\/api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp|avif)$/i;
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const emailPattern = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const phonePattern = /^\+?[0-9][0-9 ()-]{5,19}$/;
 const handlePattern = /^[A-Za-z0-9._]{1,30}$/;
@@ -269,19 +253,6 @@ function parseField(field: Field, value: unknown): FieldValue {
     case "toggle":
       if (typeof value !== "boolean") invalid(field, "must be on or off");
       return value;
-    case "products": {
-      if (!Array.isArray(value)) invalid(field, "must be a list of product slugs");
-      const max = field.max ?? 12;
-      if (value.length > max) invalid(field, `use at most ${max}`);
-      const slugs = value.map((item) => {
-        if (typeof item !== "string") return invalid(field, "must be a list of product slugs");
-        const slug = item.trim().toLowerCase();
-        if (!slug || slug.length > 80 || !slugPattern.test(slug)) invalid(field, `“${item}” is not a valid product slug`);
-        return slug;
-      });
-      if (new Set(slugs).size !== slugs.length) invalid(field, "lists the same product twice");
-      return slugs;
-    }
     case "email": {
       const clean = plainText(field, value, false);
       if (clean && !emailPattern.test(clean)) invalid(field, "is not a valid email address");
