@@ -66,10 +66,11 @@ Admin routes (Firebase ID token with `admin: true`): `GET /api/admin/signups` re
 
 For local key setup, copy `.env.example` to `.env.local`, paste only the Paystack **Test Secret Key** into `PAYSTACK_SECRET_KEY=`, then run `npm run check:paystack`. The check contacts Paystack and reports acceptance without printing the key. The hosted checkout does not need a browser public key. `.env.local` is Git-ignored. Keep checkout switches unset while delivery rules and the public test webhook are being prepared.
 
-The test-mode order flow is implemented but **closed by default**. `POST /api/checkout` returns 503 until all required server settings below are present. There is no live-mode payment path. The store must not take money or promise an order yet.
+The test-mode order flow is implemented but **closed by default**. `POST /api/checkout` returns 503 until all required server settings below are present. Test mode is the default. Live mode needs both a live secret key (`sk_live_…`) and `VEGORA_PAYSTACK_MODE=live`; a live key without that switch, or the switch with a test key, keeps checkout closed. In live mode only payments Paystack reports as `domain: "live"` are captured; in test mode only `domain: "test"`.
 
 ```dotenv
-PAYSTACK_SECRET_KEY=sk_test_...
+PAYSTACK_SECRET_KEY=sk_test_...   # or sk_live_... with VEGORA_PAYSTACK_MODE=live
+VEGORA_PAYSTACK_MODE=            # leave unset for test mode; "live" for real payments
 VEGORA_SITE_URL=https://your-test-domain.example
 VEGORA_DELIVERY_ZONES_JSON=
 VEGORA_CRON_SECRET=

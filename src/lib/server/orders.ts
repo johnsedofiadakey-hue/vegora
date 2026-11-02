@@ -310,7 +310,7 @@ export async function reconcilePayment(verification: PaystackVerification): Prom
     const order = snap.data() as Order | undefined;
     if (!order) return null;
     const now = new Date().toISOString();
-    const action = paymentAction(order, verification, now);
+    const action = paymentAction(order, verification, now, paymentConfig().mode);
     if (action === "keep") return order;
     if (action === "reverse_review") {
       const next: Order = { ...order, status: "review_required", paymentStatus: "reversed", updatedAt: now };

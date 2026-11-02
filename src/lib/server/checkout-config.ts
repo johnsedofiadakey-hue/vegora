@@ -10,29 +10,35 @@ export interface DeliveryZone {
   feeMinor: number;
 }
 
+export type PaymentMode = "test" | "live";
+
 export interface CheckoutConfig {
   secretKey: string;
+  mode: PaymentMode;
   siteUrl: string;
   zones: DeliveryZone[];
 }
 
-export function paymentConfig(): { secretKey: string } {
+// A live key is only accepted when VEGORA_PAYSTACK_MODE=live is also set, so
+// real money cannot be switched on by pasting the wrong key alone.
+export function paymentConfig(): { secretKey: string; mode: PaymentMode } {
   const secretKey = (process.env.PAYSTACK_SECRET_KEY ?? "").trim();
-  if (!secretKey.startsWith("sk_test_") || secretKey.length < 20) {
-    throw new ServerConfigError("Test payment verification is not configured");
+  const mode: PaymentMode = process.env.VEGORA_PAYSTACK_MODE === "live" ? "live" : "test";
+  if (!secretKey.startsWith(`sk_${mode}_`) || secretKey.length < 20) {
+    throw new ServerConfigError(`${mode === "live" ? "Live" : "Test"} payment verification is not configured`);
   }
-  return { secretKey };
+  return { secretKey, mode };
 }
 
 export function checkoutConfig(): CheckoutConfig {
-  const { secretKey } = paymentConfig();
+  const { secretKey, mode } = paymentConfig();
   const siteUrl = process.env.VEGORA_SITE_URL ?? "";
   const rawZones = process.env.VEGORA_DELIVERY_ZONES_JSON ?? "";
   if (process.env.VEGORA_CHECKOUT_ENABLED !== "true" ||
       process.env.VEGORA_WEBHOOK_CONFIRMED !== "true" ||
       process.env.VEGORA_EXPIRY_JOB_CONFIRMED !== "true" ||
       (process.env.VEGORA_CRON_SECRET ?? "").trim().length < 32 || !siteUrl || !rawZones) {
-    throw new ServerConfigError("Test checkout is not configured");
+    throw new ServerConfigError("Checkout is not configured");
   }
   let url: URL;
   try { url = new URL(siteUrl); } catch { throw new ServerConfigError("Checkout site URL is invalid"); }
@@ -63,7 +69,7 @@ export function checkoutConfig(): CheckoutConfig {
   if (new Set(parsed.map((zone) => zone.id)).size !== parsed.length) {
     throw new ServerConfigError("Delivery zone IDs must be unique");
   }
-  return { secretKey, siteUrl: url.origin, zones: parsed };
+  return { secretKey, mode, siteUrl: url.origin, zones: parsed };
 }
 
 export function matchingDeliveryZone(config: CheckoutConfig, id: string, region: string, city: string): DeliveryZone | null {
