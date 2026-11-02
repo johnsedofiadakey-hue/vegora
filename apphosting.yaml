@@ -1,5 +1,5 @@
 # Public Firebase web configuration for the VEGORA App Hosting preview.
-# Checkout flags and payment secrets are intentionally absent.
+# Checkout stays closed until the delivery zones and the three checkout switches are added.
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyCicY3zLGVy8t7d2Bd4O81d2oK6wcueclM
@@ -31,5 +31,9 @@ env:
       - RUNTIME
   - variable: VEGORA_CRON_SECRET
     secret: VEGORA_CRON_SECRET
+    availability:
+      - RUNTIME
+  - variable: PAYSTACK_SECRET_KEY
+    secret: PAYSTACK_SECRET_KEY
     availability:
       - RUNTIME
