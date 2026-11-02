@@ -9,7 +9,7 @@ const description = "Explore VEGORA's considered point of view on dressing for w
 // running service rather than being fixed at build time.
 export async function generateMetadata(): Promise<Metadata> {
   const origin = siteOrigin();
-  const image = shareImageUrl(origin, "/editorial/ve-man-coat.png");
+  const image = shareImageUrl(origin, "/editorial/ve-ivory-model-v1.webp");
   return {
     metadataBase: new URL(origin),
     title: { default: title, template: "%s | VEGORA" },

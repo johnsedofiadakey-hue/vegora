@@ -46,8 +46,8 @@ const statusLabel: Record<BlockStatus, string> = {
 };
 
 const siteImageLabels: Record<string, string> = {
-  "/editorial/ve-man.png": "Man in black tailoring",
-  "/editorial/ve-man-coat.png": "Man in a black overcoat",
+  "/editorial/ve-navy-model-v1.webp": "Man in the navy stripe T-shirt",
+  "/editorial/ve-ivory-model-v1.webp": "Man in the ivory stripe T-shirt",
   "/editorial/ve-woman.png": "Woman in black tailoring",
   "/editorial/ve-woman-light.png": "Woman in a white tailored jacket",
   "/editorial/ve-detail.png": "Tailoring detail",
@@ -310,7 +310,7 @@ export function ContentEditor({ adminFetch }: { adminFetch: AdminFetch }) {
               <button type="button" className={styles.uploadButton} disabled={busy}
                 onClick={() => { uploadingFor.current = field.key; fileInput.current?.click(); }}>Upload a photograph</button>
               <select aria-label={`Choose a site photograph for ${field.label}`} value={siteChoice} disabled={busy}
-                onChange={(event) => { if (event.target.value) setField(field.key, { url: event.target.value, alt: image.alt.trim() ? image.alt : siteImageLabels[event.target.value] ?? "" }); }}>
+                onChange={(event) => { if (event.target.value) setField(field.key, { url: event.target.value, alt: siteImageLabels[event.target.value] ?? "" }); }}>
                 <option value="">Or choose a site photograph…</option>
                 {approvedEditorialImages.map((url) => <option key={url} value={url}>{siteImageLabels[url] ?? url}</option>)}
               </select>

@@ -53,7 +53,7 @@ test("product markup carries price, currency, stock and absolute image links", (
 });
 
 test("share images are resized links, and other links are made absolute", () => {
-  assert.equal(shareImageUrl("https://a.example", "/editorial/ve-man-coat.png"), "https://a.example/api/image?src=%2Feditorial%2Fve-man-coat.png&w=1200&q=75");
+  assert.equal(shareImageUrl("https://a.example", "/editorial/ve-ivory-model-v1.webp"), "https://a.example/api/image?src=%2Feditorial%2Fve-ivory-model-v1.webp&w=1200&q=75");
   // A path that cannot be resized is shared as it is, never through the resizer.
   assert.equal(shareImageUrl("https://a.example", "/icon.svg"), "https://a.example/icon.svg");
   assert.equal(absoluteUrl("https://a.example", "/men"), "https://a.example/men");

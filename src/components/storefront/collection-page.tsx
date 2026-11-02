@@ -4,7 +4,7 @@ import { CatalogCollection } from "./catalog-collection";
 type CollectionPageProps = { audience?: "women" | "men"; title: string; eyebrow: string; description: string; tag?: "new_arrival" | "best_seller" };
 
 export function CollectionPage({ audience, title, eyebrow, description, tag }: CollectionPageProps) {
-  const image = audience === "women" ? "/editorial/ve-woman-light.png" : "/editorial/ve-man-coat.png";
+  const image = audience === "women" ? "/editorial/ve-woman-light.png" : "/editorial/ve-ivory-model-v1.webp";
   return <div className="collection-page">
     <section className={`collection-banner ${audience === "men" ? "collection-banner-men" : ""}`}>
       <div className="collection-banner-copy"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>

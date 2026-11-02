@@ -30,7 +30,7 @@ test("defaults are copies, so editing one never changes the built-in text", () =
   const b = defaultValues("home");
   assert.equal(b.heroLine1, "The art");
   assert.notEqual(b.heroImage.alt, "Changed");
-  assert.equal(b.heroImage.url, "/editorial/ve-man.png");
+  assert.equal(b.heroImage.url, "/editorial/ve-navy-model-v1.webp");
 });
 
 test("the homepage defaults keep today's wording", () => {
@@ -84,7 +84,7 @@ test("images must be uploaded media or approved site photographs, with a descrip
   const media = "/api/media/014deacf-5394-4f2f-b393-079bc26b6f8c.png";
   const ok = parseValues("edit", { image: { url: media, alt: " A man in a coat " } });
   assert.deepEqual(ok.image, { url: media, alt: "A man in a coat" });
-  assert.equal(parseValues("edit", { image: { url: "/editorial/ve-detail.png", alt: "Detail" } }).image.url, "/editorial/ve-detail.png");
+  assert.equal(parseValues("edit", { image: { url: "/editorial/ve-ivory-model-v1.webp", alt: "Man in ivory" } }).image.url, "/editorial/ve-ivory-model-v1.webp");
   for (const url of ["https://example.com/a.png", "/editorial/other.png", "/api/media/not-a-uuid.png", "/api/media/014deacf-5394-4f2f-b393-079bc26b6f8c.svg",
     "/catalog/red-stripe.webp", "//evil.com/a.png", "javascript:alert(1)"]) {
     rejects(() => parseValues("edit", { image: { url, alt: "Alt" } }));
@@ -155,6 +155,21 @@ test("stored content that is broken or out of date never breaks a page", () => {
   assert.equal(resolveValues("announcement", { enabled: true, text: "" }).enabled, false);
   assert.deepEqual(normalizeState("junk"), emptyBlockState);
   assert.equal(normalizeState({ version: "7", draft: "x", published: [] }).version, 0);
+});
+
+test("published campaign paths resolve to the new product-led photographs", () => {
+  const home = resolveValues("home", {
+    heroImage: { url: "/editorial/ve-man.png", alt: "Man in black tailoring" },
+  });
+  assert.deepEqual(home.heroImage, {
+    url: "/editorial/ve-navy-model-v1.webp",
+    alt: "Man wearing the navy and ivory striped VEGORA T-shirt",
+  });
+  const edit = resolveValues("edit", {
+    image: { url: "/editorial/ve-man-coat.png", alt: "Man in a black coat" },
+  });
+  assert.equal(edit.image.url, "/editorial/ve-ivory-model-v1.webp");
+  assert.equal(edit.image.alt, "Man wearing the ivory and black striped VEGORA T-shirt");
 });
 
 test("saving a draft changes nothing that is live", () => {

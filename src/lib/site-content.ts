@@ -68,12 +68,20 @@ export const maxUploadBytes = 8 * 1024 * 1024;
 export const uploadMimeTypes: readonly string[] = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
 export const approvedEditorialImages: readonly string[] = [
-  "/editorial/ve-man.png",
-  "/editorial/ve-man-coat.png",
+  "/editorial/ve-navy-model-v1.webp",
+  "/editorial/ve-ivory-model-v1.webp",
   "/editorial/ve-woman.png",
   "/editorial/ve-woman-light.png",
   "/editorial/ve-detail.png",
 ];
+
+// Published CMS blocks can still contain the earlier campaign paths. Resolve
+// those photographs to the new product-led campaign without changing a draft
+// or overwriting an owner's other content.
+const retiredEditorialImages: Record<string, ImageValue> = {
+  "/editorial/ve-man.png": { url: "/editorial/ve-navy-model-v1.webp", alt: "Man wearing the navy and ivory striped VEGORA T-shirt" },
+  "/editorial/ve-man-coat.png": { url: "/editorial/ve-ivory-model-v1.webp", alt: "Man wearing the ivory and black striped VEGORA T-shirt" },
+};
 
 export const blocks = {
   announcement: defineBlock({
@@ -94,7 +102,7 @@ export const blocks = {
       heroLine1: { kind: "text", label: "Hero headline, first line", max: 40, required: true, default: "The art" },
       heroLine2: { kind: "text", label: "Hero headline, second line", max: 40, required: true, default: "of dressing" },
       heroSubline: { kind: "text", label: "Hero tagline", max: 120, required: true, default: "Style is personal. Make it yours." },
-      heroImage: { kind: "image", label: "Hero photograph", required: true, help: "Portrait photograph. It is cropped to a tall frame, so keep the subject centred.", default: { url: "/editorial/ve-man.png", alt: "VEGORA editorial portrait of a man in black tailoring" } },
+      heroImage: { kind: "image", label: "Hero photograph", required: true, help: "Portrait photograph. It is cropped to a tall frame, so keep the subject centred.", default: { url: "/editorial/ve-navy-model-v1.webp", alt: "Man wearing the navy and ivory striped VEGORA T-shirt" } },
       introLabel: { kind: "text", label: "Introduction small heading", max: 60, required: true, default: "AN EXPRESSION OF YOU" },
       introLead: { kind: "text", label: "Introduction headline", max: 60, required: true, default: "Considered style." },
       introEmphasis: { kind: "text", label: "Introduction headline, italic line", max: 60, required: true, default: "Distinct presence." },
@@ -113,7 +121,7 @@ export const blocks = {
       leadLine1: { kind: "text", label: "Headline", max: 60, required: true, default: "The art of" },
       leadEmphasis: { kind: "text", label: "Headline, italic line", max: 60, required: true, default: "dressing." },
       leadBody: { kind: "text", label: "Lead text", max: 200, required: true, default: "A visual expression of presence, individuality, and considered style." },
-      image: { kind: "image", label: "Photograph", required: true, default: { url: "/editorial/ve-man-coat.png", alt: "Man in a black overcoat" } },
+      image: { kind: "image", label: "Photograph", required: true, default: { url: "/editorial/ve-ivory-model-v1.webp", alt: "Man wearing the ivory and black striped VEGORA T-shirt" } },
       copyLabel: { kind: "text", label: "Closing small heading", max: 60, required: true, default: "AN EXPRESSION OF YOU" },
       copyLead: { kind: "text", label: "Closing headline", max: 60, required: true, default: "Wear what feels" },
       copyEmphasis: { kind: "text", label: "Closing headline, italic line", max: 60, required: true, default: "like you." },
@@ -251,11 +259,11 @@ function imageValue(field: Field, value: unknown): ImageValue {
   const image = value as Record<string, unknown>;
   if (typeof image.url !== "string" || typeof image.alt !== "string") invalid(field, "must include a photograph and its description");
   const url = image.url.trim();
-  if (!mediaPath.test(url) && !approvedEditorialImages.includes(url)) {
+  if (!mediaPath.test(url) && !approvedEditorialImages.includes(url) && !Object.prototype.hasOwnProperty.call(retiredEditorialImages, url)) {
     invalid(field, "upload the photograph through the admin or use one of the approved site images");
   }
   const alt = plainText({ ...field, label: `${field.label} description`, max: 200, required: true }, image.alt, false);
-  return { url, alt };
+  return retiredEditorialImages[url] ?? { url, alt };
 }
 
 function parseField(field: Field, value: unknown): FieldValue {
