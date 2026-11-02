@@ -6,7 +6,7 @@ Full handover with checkboxes and a progress log: `PLAN_HOME_ARRIVALS_AND_SIGNUP
 
 ## Update (2 November 2026): tracking without email or SMS (decision: none will be added)
 
-Checkout is open in **live Paystack mode** with Accra GH₵30 and Tema GH₵50 (all in `apphosting.yaml`). The owner decided not to send emails or texts, so tracking is self-service: `/track` (progress bar, items and totals, refresh, auto re-check every minute, `?order=` links, optional "remember on this device" in localStorage), a large order-number card with copy / save-as-picture / share on the payment return page, a screenshot warning on the checkout page, and a search box on the admin Orders list. Contract in `ADMIN_SETUP.md` ("Checkout gate"). No real payment has been tested yet: the first live order and refund will show whether the webhook works. The alert exclusion for 503 on `/api/checkout/zones` should now be removed.
+Checkout is open in **live Paystack mode** with Accra GH₵30 and Tema GH₵50 (all in `apphosting.yaml`). The owner decided not to send emails or texts, so tracking is self-service: `/track` (progress bar, items and totals, refresh, auto re-check every minute, `?order=` links, optional "remember on this device" in localStorage), a large order-number card with copy / save-as-picture / share on the payment return page, a screenshot warning on the checkout page, and a search box on the admin Orders list. Contract in `ADMIN_SETUP.md` ("Checkout gate"). No real payment has been tested yet: the first live order and refund will show whether the webhook works. The alert exclusion for 503 on `/api/checkout/zones` was removed on 2 November 2026 (every error now alerts).
 
 ## Status update (31 October 2026, evening). Read this first
 
@@ -22,7 +22,7 @@ It replaces the "Current snapshot" below wherever they differ.
 2. Decisions: a mail service and sender address for order emails, cancel and refund rules, tax. Live payments need a separate implementation, review and the owner's approval (the code rejects live keys).
 3. Owner content: real names, prices, sizes, stock, women's products, policy text, contact details, custom domain.
 4. Optional: CMS draft preview, "notify me" signup, delivery estimate in the bag, mobile money shown at checkout.
-5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`. When checkout opens, also **remove the `/api/checkout/zones` 503 exclusion from the "VEGORA server errors" alert policy** (it exists only because the closed checkout answers 503 on every bag visit).
+5. Launch: set `VEGORA_ALLOW_INDEXING=true` and a custom-domain `VEGORA_SITE_URL`. The `/api/checkout/zones` 503 alert exclusion was removed when checkout opened (2 November 2026).
 
 **Verified on the live site (1 November 2026, with the owner signed in):** the Content tab reads all nine sections from the real database; save draft leaves the site unchanged; publish with confirmation reaches every shop page within seconds; restoring the original wording works; loading an earlier version into the draft leaves the site unchanged; discard clears it. The photo route resizes on Cloud Run, the expiry job returns 200 every five minutes, and both uptime checks pass. The `contact` section now shows as published with its built-in wording (two revisions in its history).
 
