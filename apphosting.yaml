@@ -1,5 +1,5 @@
 # Public Firebase web configuration for the VEGORA App Hosting preview.
-# Checkout stays closed until the delivery zones and the three checkout switches are added.
+# Live Paystack mode. Checkout opens only when all three switches (checkout, expiry job, webhook) are "true".
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyCicY3zLGVy8t7d2Bd4O81d2oK6wcueclM
@@ -35,5 +35,25 @@ env:
       - RUNTIME
   - variable: PAYSTACK_SECRET_KEY
     secret: PAYSTACK_SECRET_KEY
+    availability:
+      - RUNTIME
+  - variable: VEGORA_PAYSTACK_MODE
+    value: live
+    availability:
+      - RUNTIME
+  - variable: VEGORA_DELIVERY_ZONES_JSON
+    value: '[{"id":"accra","label":"Accra","region":"Greater Accra","feeMinor":3000},{"id":"tema","label":"Tema","region":"Greater Accra","feeMinor":5000}]'
+    availability:
+      - RUNTIME
+  - variable: VEGORA_EXPIRY_JOB_CONFIRMED
+    value: "true"
+    availability:
+      - RUNTIME
+  - variable: VEGORA_CHECKOUT_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+  - variable: VEGORA_WEBHOOK_CONFIRMED
+    value: "true"
     availability:
       - RUNTIME
