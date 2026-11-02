@@ -585,3 +585,12 @@ a { color:inherit; text-decoration:none; }
   .track-steps li strong { grid-column:2; grid-row:1; }
   .track-steps i { grid-row:1 / span 2; }
 }
+
+/* Simple checkout: delivery area choice and hints */
+.checkout-hint { display:block; margin-top:8px; color:#666; font-size:12px; line-height:1.5; letter-spacing:normal; text-transform:none; font-weight:400; }
+.checkout-zones { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:6px; }
+.checkout-zones .checkout-zone { position:relative; display:grid; grid-template-columns:auto 1fr; align-items:center; gap:4px 12px; min-height:68px; padding:16px 18px; border:1px solid #bdbab7; background:#fff; cursor:pointer; text-transform:none; letter-spacing:normal; font-size:15px; }
+.checkout-zones .checkout-zone input { grid-row:1 / span 2; width:20px; height:20px; min-height:20px; margin:0; accent-color:var(--accent); }
+.checkout-zones .checkout-zone strong { grid-column:2; color:var(--accent); font-size:16px; font-weight:500; }
+.checkout-zones .checkout-zone[data-selected="true"] { border-color:#111; box-shadow:inset 0 0 0 1px #111; background:#f6f5f2; }
+.checkout-zones .checkout-zone:focus-within { outline:2px solid var(--accent); outline-offset:2px; }

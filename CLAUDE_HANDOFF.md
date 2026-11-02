@@ -1,5 +1,9 @@
 # VEGORA handoff for Claude
 
+## Update (2 November 2026, later): simple checkout, phone-based tracking, cart wording
+
+Decisions by the owner: **no email collected**, checkout asks only full name, phone number, delivery area (Accra GH₵30 / Tema GH₵50 radio choice) and one address box; the website uses simple English; "bag" became **cart** (`/cart`, `/bag` redirects in `next.config.ts`; internal names such as `bag-store` and `.bag-*` CSS were left alone). Tracking now uses order number + **phone number** (`src/lib/contact.ts`: last nine digits compared; emails still match older orders). Paystack gets a placeholder email built from the phone number. Content defaults in `src/lib/site-content.ts` were rewritten in plain words, but anything already **published** in the CMS overrides them. "The Edit" became "Our Style" and "New In" became "New Clothes" in the navigation and page titles. Contracts in `ADMIN_SETUP.md`.
+
 ## Update (1 November 2026): home page and footer sign-ups
 
 Full handover with checkboxes and a progress log: `PLAN_HOME_ARRIVALS_AND_SIGNUPS.md`. In short: the home page is now hero, short introduction and **new arrivals** (products tagged `new_arrival`), then the footer; the collections / first pieces / edit / closing sections and the featured-pieces picker were removed. The footer has a sign-up form (deals, customization, bulk orders, other) saving to Firestore `signups`, managed in a new admin **Sign-ups** tab (contracts in `ADMIN_SETUP.md`). The site is served on `https://www.shopvegora.com` (bare domain redirects); `apphosting.yaml` now sets `VEGORA_SITE_URL` to it, which takes effect on the next deploy. Do not push or deploy without the user's go-ahead.

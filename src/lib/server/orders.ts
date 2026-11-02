@@ -2,7 +2,6 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import type { CheckoutConfig, DeliveryZone } from "./checkout-config";
-import { matchingDeliveryZone } from "./checkout-config";
 import { storeDb } from "./firebase-admin";
 import { HttpError } from "./http";
 import { readStoredProduct, type StoredProduct } from "./products";
@@ -10,6 +9,7 @@ import type { PaystackVerification } from "./paystack";
 import { paymentAction, type OrderStatus } from "./payment-policy";
 import { paymentConfig } from "./checkout-config";
 import { verifyPaystack } from "./paystack";
+import { placeholderEmail } from "../contact";
 import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput, shortOrderCode,
   trackingLookupMatches, type TrackingLookup, type Fulfillment, type FulfillmentEvent, type FulfillmentEventKind, type FulfillmentInput,
   type FulfillmentStatus } from "../fulfillment";
@@ -62,19 +62,22 @@ function object(value: unknown): Record<string, unknown> {
 
 export function parseCheckoutInput(value: unknown): CheckoutInput {
   const input = object(value);
-  const email = boundedText(input.email, "Email", 254).toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, "Email is invalid");
   const customer = object(input.customer);
   const name = boundedText(customer.name, "Name", 150);
-  const phone = boundedText(customer.phone, "Phone", 30);
-  if (!/^[+0-9()\s-]{8,30}$/.test(phone)) throw new HttpError(400, "Phone is invalid");
+  const phone = boundedText(customer.phone, "Phone number", 30);
+  if (!/^[+0-9()\s-]{8,30}$/.test(phone)) throw new HttpError(400, "Enter a valid phone number");
+  // No email is collected. Paystack still needs one to start a payment, so the order
+  // carries a private placeholder made from the phone number.
+  const email = placeholderEmail(phone);
+  if (!email) throw new HttpError(400, "Enter a valid phone number");
   const delivery = object(input.delivery);
-  const zoneId = boundedText(delivery.zoneId, "Delivery zone", 50);
-  const addressLine1 = boundedText(delivery.addressLine1, "Address", 200);
-  const addressLine2 = boundedText(delivery.addressLine2 ?? "", "Address line 2", 200, false);
-  const city = boundedText(delivery.city, "City", 100);
-  const region = boundedText(delivery.region, "Region", 100);
-  const notes = boundedText(delivery.notes ?? "", "Delivery notes", 500, false);
+  const zoneId = boundedText(delivery.zoneId, "Delivery area", 50);
+  const addressLine1 = boundedText(delivery.addressLine1, "Delivery address", 300);
+  // The area (and its region) comes from the delivery zone, not from the customer.
+  const addressLine2 = "";
+  const city = "";
+  const region = "";
+  const notes = "";
   if (!Array.isArray(input.items) || input.items.length === 0 || input.items.length > 30) {
     throw new HttpError(400, "Choose 1–30 items");
   }
@@ -89,7 +92,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput {
     return { slug, variantId, quantity: Number(item.quantity) };
   });
   if (new Set(items.map((item) => `${item.slug}:${item.variantId}`)).size !== items.length) {
-    throw new HttpError(400, "Duplicate size in bag");
+    throw new HttpError(400, "The same size is in your cart twice");
   }
   const idempotencyKey = boundedText(input.idempotencyKey, "Checkout key", 36);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
@@ -127,8 +130,9 @@ function checkedTotal(lines: OrderLine[], zone: DeliveryZone): { subtotalMinor: 
 }
 
 export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig): Promise<{ order: Order; created: boolean }> {
-  const zone = matchingDeliveryZone(config, input.delivery.zoneId, input.delivery.region, input.delivery.city);
-  if (!zone) throw new HttpError(400, "Delivery destination is not available");
+  const zone = config.zones.find((entry) => entry.id === input.delivery.zoneId);
+  if (!zone) throw new HttpError(400, "Please choose Accra or Tema for delivery");
+  input = { ...input, delivery: { ...input.delivery, region: zone.region, city: zone.cities?.[0] ?? zone.label } };
   const fingerprint = checkoutFingerprint(input);
   const keyRef = checkoutKeyRef(input.idempotencyKey);
   const reference = `VG-${randomUUID().replace(/-/g, "")}`;
@@ -140,7 +144,7 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
     const keySnap = await tx.get(keyRef);
     if (keySnap.exists) {
       const data = keySnap.data() as { reference: string; fingerprint: string };
-      if (data.fingerprint !== fingerprint) throw new HttpError(409, "Checkout key was already used for a different bag");
+      if (data.fingerprint !== fingerprint) throw new HttpError(409, "Checkout key was already used for a different cart");
       const existing = await tx.get(orderRef(data.reference));
       if (!existing.exists) throw new HttpError(500, "Checkout record is incomplete");
       return { order: existing.data() as Order, created: false };
@@ -150,7 +154,7 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
     for (let index = 0; index < productSlugs.length; index++) {
       const record = readStoredProduct(snapshots[index].data());
       if (!record || record.status !== "published" || record.priceMinor === null) {
-        throw new HttpError(409, "An item in your bag is no longer available");
+        throw new HttpError(409, "An item in your cart is no longer available");
       }
       records.set(productSlugs[index], record);
     }
@@ -237,16 +241,16 @@ export async function getOrder(reference: string): Promise<Order | null> {
   return (snap.data() as Order | undefined) ?? null;
 }
 
-/** Finds the order a customer is asking about by short number or long reference, if the email matches. */
+/** Finds the order a customer is asking about by short number or long reference, if the phone number (or an older email) matches. */
 export async function findOrderForTracking(lookup: TrackingLookup): Promise<Order | null> {
   if (lookup.reference) {
     const order = await getOrder(lookup.reference);
-    return order && trackingLookupMatches(order, lookup.email) ? order : null;
+    return order && trackingLookupMatches(order, lookup) ? order : null;
   }
   if (!lookup.shortCode) return null;
-  // Short numbers are not guaranteed unique, so check the email on every match.
+  // Short numbers are not guaranteed unique, so check the phone number on every match.
   const snap = await storeDb().collection("orders").where("shortCode", "==", lookup.shortCode).limit(5).get();
-  const match = snap.docs.map((doc) => doc.data() as Order).find((order) => trackingLookupMatches(order, lookup.email));
+  const match = snap.docs.map((doc) => doc.data() as Order).find((order) => trackingLookupMatches(order, lookup));
   return match ?? null;
 }
 

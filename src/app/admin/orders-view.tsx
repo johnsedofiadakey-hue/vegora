@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArrowLeft, RefreshCw, Search } from "lucide-react";
 import type { Product } from "@/lib/catalog";
 import { formatGhs } from "@/lib/catalog";
+import { isPlaceholderEmail } from "@/lib/contact";
 import { shortOrderCode, type Fulfillment, type FulfillmentEvent, type FulfillmentInput } from "@/lib/fulfillment";
 import { FulfillmentEditor } from "./fulfillment-editor";
 import admin from "./admin.module.css";
@@ -89,7 +90,7 @@ export function OrdersView({ orders, products, selected, detailOpen, events, mes
       </div>
       <p className={styles.lead}>{orders.length === 0 ? "Paid orders will appear here." : todo > 0 ? `${todo} paid ${todo === 1 ? "order needs" : "orders need"} packing or delivery.` : "Every paid order has been delivered."}</p>
       {message && !detailOpen && <p role="status" className={admin.message}>{message}</p>}
-      {orders.length > 0 && <label className={styles.orderSearch}><Search size={15} aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find by order number, email, name or phone" aria-label="Find an order" autoComplete="off" /></label>}
+      {orders.length > 0 && <label className={styles.orderSearch}><Search size={15} aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find by order number, phone or name" aria-label="Find an order" autoComplete="off" /></label>}
       {needle && visible.length === 0 && <p className={styles.lead} role="status">No order matches “{query.trim()}”. Check the spelling, or try the email the customer used.</p>}
       <ul>{visible.map((item) => <li key={item.reference}>
         <button type="button" aria-current={order?.reference === item.reference ? "true" : undefined} onClick={() => onSelect(item.reference)}>
@@ -129,7 +130,7 @@ export function OrdersView({ orders, products, selected, detailOpen, events, mes
 
         <div className={styles.card}>
           <h2>Customer and delivery</h2>
-          <p><a href={`tel:${order.customer.phone.replace(/[^+0-9]/g, "")}`}>{order.customer.phone}</a><br /><a href={`mailto:${order.email}`}>{order.email}</a></p>
+          <p><a href={`tel:${order.customer.phone.replace(/[^+0-9]/g, "")}`}>{order.customer.phone}</a><br />{isPlaceholderEmail(order.email) ? null : <a href={`mailto:${order.email}`}>{order.email}</a>}</p>
           <p>{order.delivery.addressLine1}{order.delivery.addressLine2 ? `, ${order.delivery.addressLine2}` : ""}<br />{order.delivery.city}, {order.delivery.region}<br />{order.delivery.zoneLabel}</p>
           {order.delivery.notes && <p className={styles.note}>Note: {order.delivery.notes}</p>}
         </div>

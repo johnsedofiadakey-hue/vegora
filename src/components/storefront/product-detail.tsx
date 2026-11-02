@@ -25,7 +25,7 @@ function previewRecord(slug: string): Product | null {
   };
 }
 
-const addedMessage = "Added to your bag.";
+const addedMessage = "Added to your cart.";
 
 export function ProductDetail({ slug }: { slug: string }) {
   const [product, setProduct] = useState<Product | null>(() => previewRecord(slug));
@@ -55,7 +55,7 @@ export function ProductDetail({ slug }: { slug: string }) {
 
   // On a phone the price and size picker are below the photographs, so a bar
   // pinned to the bottom keeps the next step in reach. With no size chosen it
-  // takes the shopper to the size picker; once added it offers the bag.
+  // takes the shopper to the size picker; once added it offers the cart.
   function barAction() {
     if (!chosenVariant) {
       sizePicker.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -68,7 +68,7 @@ export function ProductDetail({ slug }: { slug: string }) {
   function add() {
     if (!chosenVariant || !canAdd) return;
     try { addToBag(product!, chosenVariant, quantity); setFeedback(addedMessage); }
-    catch { setFeedback("Your browser could not save this bag. Please try again."); }
+    catch { setFeedback("Your browser could not save your cart. Please try again."); }
   }
 
   return <div className="product-page">
@@ -76,20 +76,20 @@ export function ProductDetail({ slug }: { slug: string }) {
       <div className="product-main-image">{product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt || product.name} width={800} height={1000} sizes="(max-width: 767px) 100vw, 50vw" priority /> : <span>VEGORA</span>}</div>
       {product.images.length > 1 && <div className="product-thumbnails" aria-label="Product images">{product.images.map((image, index) => <button key={`${image.url}-${index}`} type="button" aria-label={`Show image ${index + 1}`} aria-pressed={activeImage === index} onClick={() => setActiveImage(index)}><Image src={image.url} alt="" width={80} height={100} sizes="80px" /></button>)}</div>}
     </div>
-    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to collection</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
-      {isPreview ? <div className="product-preview-notice"><span>Collection preview</span><p>This piece is in preview. The displayed price is for testing only. Final price and available sizes will be confirmed before ordering opens.</p></div> : <>
+    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to the clothes</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
+      {isPreview ? <div className="product-preview-notice"><span>Coming soon</span><p>This item is not on sale yet. The price shown is not final. We will add the real price and sizes soon.</p></div> : <>
         <fieldset className="size-picker" ref={sizePicker}><legend>Select size</legend><div>{product.variants.map((variant) => <button key={variant.id} type="button" disabled={variant.stock < 1} aria-pressed={variantId === variant.id} onClick={() => { setVariantId(variant.id); setQuantity(1); setFeedback(""); }}>{variant.size}</button>)}</div></fieldset>
-        <p className="stock-note">{!product.variants.length ? "Sizes will be added soon" : !hasAvailableSize ? "Currently unavailable" : !chosenVariant ? "Choose a size to continue" : `${chosenVariant.stock} available in this size`}</p>
+        <p className="stock-note">{!product.variants.length ? "Sizes coming soon" : !hasAvailableSize ? "Sold out" : !chosenVariant ? "Choose a size first" : `${chosenVariant.stock} available in this size`}</p>
         <div className="quantity-picker"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" disabled={quantity <= 1} onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={16} /></button><strong>{quantity}</strong><button type="button" aria-label="Increase quantity" disabled={!chosenVariant || quantity >= chosenVariant.stock} onClick={() => setQuantity(Math.min(chosenVariant?.stock || 1, quantity + 1))}><Plus size={16} /></button></div></div>
-        <button className="add-bag-button" type="button" disabled={!canAdd} onClick={add}>{canAdd ? "Add to bag" : hasAvailableSize ? "Select a size" : "Unavailable"} <ArrowUpRight size={18} /></button><p className="product-feedback" role="status">{feedback}</p>
+        <button className="add-bag-button" type="button" disabled={!canAdd} onClick={add}>{canAdd ? "Add to cart" : hasAvailableSize ? "Select a size" : "Sold out"} <ArrowUpRight size={18} /></button><p className="product-feedback" role="status">{feedback}</p>
       </>}
       {!isPreview && <div className="product-disclosure"><h2>Details</h2><p>{product.description}</p></div>}
     </div>
     {!isPreview && product.priceMinor !== null && <div className="mobile-buy-bar">
-      <div><strong>{formatMoney(product.priceMinor, product.currency)}</strong><span>{chosenVariant ? `Size ${chosenVariant.size}` : hasAvailableSize ? "Choose a size" : "Currently unavailable"}</span></div>
+      <div><strong>{formatMoney(product.priceMinor, product.currency)}</strong><span>{chosenVariant ? `Size ${chosenVariant.size}` : hasAvailableSize ? "Choose a size" : "Sold out"}</span></div>
       {feedback === addedMessage
-        ? <Link href="/bag">View bag <ArrowUpRight size={16} /></Link>
-        : <button type="button" disabled={!hasAvailableSize} onClick={barAction}>{!hasAvailableSize ? "Unavailable" : chosenVariant ? "Add to bag" : "Select size"}</button>}
+        ? <Link href="/cart">View cart <ArrowUpRight size={16} /></Link>
+        : <button type="button" disabled={!hasAvailableSize} onClick={barAction}>{!hasAvailableSize ? "Sold out" : chosenVariant ? "Add to cart" : "Select size"}</button>}
     </div>}
   </div>;
 }

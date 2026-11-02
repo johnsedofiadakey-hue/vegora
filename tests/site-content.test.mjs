@@ -28,19 +28,19 @@ test("defaults are copies, so editing one never changes the built-in text", () =
   a.heroImage.alt = "Changed";
   a.heroImage.url = "/changed.png";
   const b = defaultValues("home");
-  assert.equal(b.heroLine1, "The art");
+  assert.equal(b.heroLine1, "Dress well.");
   assert.notEqual(b.heroImage.alt, "Changed");
   assert.equal(b.heroImage.url, "/editorial/ve-navy-model-v1.webp");
 });
 
-test("the homepage defaults keep today's wording", () => {
+test("the homepage defaults use short, plain wording", () => {
   const home = defaultValues("home");
-  assert.equal(home.heroLine1, "The art");
-  assert.equal(home.heroLine2, "of dressing");
-  assert.equal(home.introLead, "Considered style.");
-  assert.equal(home.arrivalsLead, "The latest");
-  assert.equal(home.arrivalsEmphasis, "arrivals.");
-  assert.equal(home.arrivalsLinkLabel, "View all new in");
+  assert.equal(home.heroLine1, "Dress well.");
+  assert.equal(home.heroLine2, "Be yourself.");
+  assert.equal(home.introLead, "Simple clothes.");
+  assert.equal(home.arrivalsLead, "Our newest");
+  assert.equal(home.arrivalsEmphasis, "clothes.");
+  assert.equal(home.arrivalsLinkLabel, "See all new clothes");
   assert.equal(defaultValues("about").body.split("\n\n").length, 2);
 });
 
@@ -147,7 +147,7 @@ test("stored content that is broken or out of date never breaks a page", () => {
   const stored = { heroLine1: "Kept", heroLine2: "<b>bad</b>", heroImage: { url: "https://evil.example/x.png", alt: "x" }, retired: "ignored" };
   const resolved = resolveValues("home", stored);
   assert.equal(resolved.heroLine1, "Kept");
-  assert.equal(resolved.heroLine2, "of dressing");
+  assert.equal(resolved.heroLine2, "Be yourself.");
   assert.deepEqual(resolved.heroImage, defaultValues("home").heroImage);
   assert.equal("retired" in resolved, false);
   for (const junk of [null, undefined, 5, "text", [], {}]) assert.deepEqual(resolveValues("home", junk), defaultValues("home"));

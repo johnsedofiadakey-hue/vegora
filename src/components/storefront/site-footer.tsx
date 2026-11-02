@@ -20,8 +20,8 @@ export async function SiteFooter() {
         <FooterSignup privacyHref={policyIsLive(privacy) ? "/privacy" : null} />
       </div>
       <div className="footer-links">
-        <div><span>Explore</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New In</Link><Link href="/the-edit">The Edit</Link></div>
-        <div><span>VEGORA</span><Link href="/about">Our Story</Link><Link href="/bag">Shopping Bag</Link><Link href="/track">Track order</Link>{policyIsLive(delivery) && <Link href="/delivery">{delivery.title}</Link>}{policyIsLive(returns) && <Link href="/returns">{returns.title}</Link>}{hasContact && <Link href="/contact">Contact</Link>}{policyIsLive(privacy) && <Link href="/privacy">{privacy.title}</Link>}{policyIsLive(terms) && <Link href="/terms">{terms.title}</Link>}</div>
+        <div><span>Shop</span><WomenOnly><Link href="/women">Women</Link></WomenOnly><Link href="/men">Men</Link><Link href="/new-in">New Clothes</Link><Link href="/the-edit">Our Style</Link></div>
+        <div><span>VEGORA</span><Link href="/about">About Us</Link><Link href="/cart">Your Cart</Link><Link href="/track">Track order</Link>{policyIsLive(delivery) && <Link href="/delivery">{delivery.title}</Link>}{policyIsLive(returns) && <Link href="/returns">{returns.title}</Link>}{hasContact && <Link href="/contact">Contact</Link>}{policyIsLive(privacy) && <Link href="/privacy">{privacy.title}</Link>}{policyIsLive(terms) && <Link href="/terms">{terms.title}</Link>}</div>
         {social.length > 0 && <div><span>Follow</span>{social.map(({ platform, href }) => <a key={platform} href={href} target="_blank" rel="noreferrer">{socialName[platform]}</a>)}</div>}
       </div>
     </div>

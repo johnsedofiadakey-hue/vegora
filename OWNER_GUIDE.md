@@ -41,7 +41,7 @@ Everything is done in the **Studio admin** at the website address followed by `/
 
 ## Content: the words and pictures on the site
 
-Open the **Content** tab. It has nine sections: Announcement bar, Homepage, The Edit page, About page, Contact and footer, Delivery information, Returns and exchanges, Privacy policy and Terms of sale.
+Open the **Content** tab. It has nine sections: Announcement bar, Homepage, Our Style page, About page, Contact and footer, Delivery information, Returns and exchanges, Privacy policy and Terms of sale.
 
 **The key idea: saving a draft does not change the website. Only Publish does.**
 
@@ -66,7 +66,7 @@ Changes appear within about half a minute. If you do not see a change, refresh t
 
 ## Sign-ups
 
-The footer of every page has a "Stay up to date" box under the VEGORA logo where visitors leave their email address for new arrivals and offers. Open the **Sign-ups** tab to see them.
+The footer of every page has a "Get our news" box under the VEGORA logo where visitors leave their email address for new arrivals and offers. Open the **Sign-ups** tab to see them.
 
 - Filter by interest, **Copy emails** to paste into your email program, or **Download spreadsheet** to open in Excel or Google Sheets.
 - **Remove** takes someone off the list (it asks you to confirm). Do this if a person asks you to delete their details.
@@ -94,14 +94,21 @@ Each order has an **order number** like `VG-7K2M9QXA`. Customers see this number
 3. If you picked a step by mistake you can move back **one** step. **Delivered is final.**
 4. **Internal note** is only for your team. Customers never see it.
 
-Customers follow their order on the **Track order** page (link in the footer) with their order number and the email they used. They see a progress bar (Order confirmed, Preparing, On its way, Delivered), the dates, what they ordered with the totals, and the tracking reference once dispatched. The page re-checks by itself every minute while it is open. They never see their address or anyone else's details.
+Customers follow their order on the **Track order** page (link in the footer) with their order number and the **phone number** they gave when they ordered. They see a progress bar (Order confirmed, Preparing, On its way, Delivered), the dates, what they ordered with the totals, and the tracking reference once dispatched. The page re-checks by itself every minute while it is open. They never see their address or anyone else's details.
 
 **Because the shop sends no emails or texts**, the customer is told in three places to keep their order number: a notice on the checkout page before paying, and, right after paying, a large order-number card with **Copy number**, **Save as picture** and **Share** buttons plus a "take a screenshot now" reminder. If they tick "Remember this order on this device", their next visit to Track order lists the order with a single **View** button (it is kept only in their own browser).
 
 **When a customer rings or messages you:**
 - Keep each order moving: open **Orders**, pick the order, and set the next step. That is what the customer sees; there is no other message to send.
-- Use the **search box** at the top of the Orders list. You can type their order number, email, name or part of their phone number.
-- **If they lost their order number**, search by the email or phone they give, confirm it is theirs (for example, ask for the items or delivery area), and tell them the number.
+- Use the **search box** at the top of the Orders list. You can type their order number, their name or their phone number.
+- **If they lost their order number**, search by the phone number they give, confirm it is theirs (for example, ask for the items or delivery area), and tell them the number.
+
+## What customers see now (changed 2 November 2026)
+
+- **Checkout asks for four things only:** full name, phone number, delivery area (Accra or Tema, each shows its price) and one delivery address box. There is no email field. Customers pay with Paystack.
+- **The cart.** The shop now says **cart** everywhere, not "bag" (Add to cart, Your cart). Old `/bag` links go to the cart by themselves.
+- **Plain English.** The home page, product, cart, checkout, order tracking and footer wording was rewritten in short, simple words. The page called "The Edit" is now **Our Style**, and "New In" is **New Clothes**. If you had already published your own wording for the Homepage, Our Style or About sections in the Content tab, those texts stay as you wrote them; open each section and change them if you want them simpler too.
+- **Your phone is how customers are found.** Customers look up an order with the order number and their phone number. In the Orders tab, the customer's phone number is shown (tap it to call), and you can search by phone number.
 
 ## Before checkout can open
 

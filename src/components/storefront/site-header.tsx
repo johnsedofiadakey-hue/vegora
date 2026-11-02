@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Menu, Search, ShoppingCart, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Wordmark } from "./wordmark";
 import { useWomenAvailable } from "./collection-availability";
@@ -11,8 +11,8 @@ import { readBag } from "./bag-store";
 const nav = [
   { href: "/women", label: "Women" },
   { href: "/men", label: "Men" },
-  { href: "/new-in", label: "New In" },
-  { href: "/the-edit", label: "The Edit" },
+  { href: "/new-in", label: "New Clothes" },
+  { href: "/the-edit", label: "Our Style" },
 ];
 
 export function SiteHeader() {
@@ -61,12 +61,12 @@ export function SiteHeader() {
           </nav>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label={searchOpen ? "Close search" : "Search"} aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={22} strokeWidth={1.35} /></button>
-            <Link className="icon-button bag-link" href="/bag" aria-label={bagCount > 0 ? `Shopping bag, ${bagCount} ${bagCount === 1 ? "item" : "items"}` : "Shopping bag"}><ShoppingBag size={22} strokeWidth={1.35} />{bagCount > 0 && <span className="bag-count" aria-hidden="true">{bagCount}</span>}</Link>
+            <Link className="icon-button bag-link" href="/cart" aria-label={bagCount > 0 ? `Your cart, ${bagCount} ${bagCount === 1 ? "item" : "items"}` : "Your cart"}><ShoppingCart size={22} strokeWidth={1.35} />{bagCount > 0 && <span className="bag-count" aria-hidden="true">{bagCount}</span>}</Link>
           </div>
         </div>
         {searchOpen && <form className="search-panel" role="search" onSubmit={search}>
-          <label htmlFor="site-search">Search the collection</label>
-          <input id="site-search" autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by piece or category" />
+          <label htmlFor="site-search">Search the clothes</label>
+          <input id="site-search" autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name or type" />
           <button type="submit">Search</button>
         </form>}
       </header>

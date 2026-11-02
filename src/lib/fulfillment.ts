@@ -1,3 +1,5 @@
+import { phoneKey } from "./contact.ts";
+
 export const fulfillmentStatuses = ["unfulfilled", "preparing", "dispatched", "delivered"] as const;
 
 export type FulfillmentStatus = (typeof fulfillmentStatuses)[number];
@@ -149,30 +151,49 @@ export function normalizeShortCode(input: string): string | null {
   return shortCodePattern.test(code) ? code : null;
 }
 
-export type TrackingLookup = { reference: string | null; shortCode: string | null; email: string };
+export type TrackingLookup = { reference: string | null; shortCode: string | null; email: string | null; phoneKey: string | null };
 
-/** Accepts either the short order number (VG-7K2M9QXA) or the long payment reference. */
+/**
+ * Accepts either the short order number (VG-7K2M9QXA) or the long payment reference,
+ * together with the phone number used at checkout. An email address is still accepted
+ * for orders placed before phone numbers were used to look orders up.
+ */
 export function parseTrackingLookup(value: unknown): TrackingLookup {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new FulfillmentInputError("Enter your order number and email");
+    throw new FulfillmentInputError("Enter your order number and phone number");
   }
-  const { reference, email } = value as Record<string, unknown>;
-  if (typeof reference !== "string" || reference.length > 60 ||
-      typeof email !== "string" || email.length > 254 || !emailPattern.test(email.trim())) {
-    throw new FulfillmentInputError("Enter a valid order number and email");
+  const input = value as Record<string, unknown>;
+  const reference = input.reference;
+  const contact = input.contact ?? input.email;
+  if (typeof reference !== "string" || reference.length > 60 || typeof contact !== "string" || contact.length > 254) {
+    throw new FulfillmentInputError("Enter a valid order number and phone number");
   }
-  const cleanEmail = email.trim().toLowerCase();
+  let email: string | null = null;
+  let key: string | null = null;
+  if (contact.includes("@")) {
+    if (!emailPattern.test(contact.trim())) throw new FulfillmentInputError("Enter a valid order number and phone number");
+    email = contact.trim().toLowerCase();
+  } else {
+    key = phoneKey(contact);
+    if (!key) throw new FulfillmentInputError("Enter the phone number you used at checkout");
+  }
   if (orderReferencePattern.test(reference.trim())) {
-    return { reference: `VG-${reference.trim().slice(3).toLowerCase()}`, shortCode: null, email: cleanEmail };
+    return { reference: `VG-${reference.trim().slice(3).toLowerCase()}`, shortCode: null, email, phoneKey: key };
   }
   const shortCode = normalizeShortCode(reference);
-  if (!shortCode) throw new FulfillmentInputError("Enter a valid order number and email");
-  return { reference: null, shortCode, email: cleanEmail };
+  if (!shortCode) throw new FulfillmentInputError("Enter a valid order number and phone number");
+  return { reference: null, shortCode, email, phoneKey: key };
 }
 
-/** Same answer for a wrong reference and a wrong email, so lookups cannot probe for valid references. */
-export function trackingLookupMatches(order: { email: string } | null, email: string): boolean {
-  return !!order && order.email.trim().toLowerCase() === email;
+/** Same answer for a wrong reference and a wrong contact, so lookups cannot probe for valid references. */
+export function trackingLookupMatches(
+  order: { email?: string; customer?: { phone?: string } } | null,
+  lookup: Pick<TrackingLookup, "email" | "phoneKey">,
+): boolean {
+  if (!order) return false;
+  if (lookup.email) return typeof order.email === "string" && order.email.trim().toLowerCase() === lookup.email;
+  if (lookup.phoneKey) return typeof order.customer?.phone === "string" && phoneKey(order.customer.phone) === lookup.phoneKey;
+  return false;
 }
 
 /**

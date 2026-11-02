@@ -63,26 +63,34 @@ test("delivery update input is validated before anything is written", () => {
   }
 });
 
-test("tracking lookups need a well-formed reference and email, and mismatches look identical", () => {
+test("tracking lookups need a well-formed reference and a phone number, and mismatches look identical", () => {
   assert.deepEqual(
-    parseTrackingLookup({ reference: ` VG-${"ABCDEF0123456789".repeat(2)} `, email: " Customer@Example.com " }),
-    { reference: `VG-${"abcdef0123456789".repeat(2)}`, shortCode: null, email: "customer@example.com" },
+    parseTrackingLookup({ reference: ` VG-${"ABCDEF0123456789".repeat(2)} `, contact: "0244 123 456" }),
+    { reference: `VG-${"abcdef0123456789".repeat(2)}`, shortCode: null, email: null, phoneKey: "244123456" },
   );
   // The short order number works too, however a person types it.
   for (const typed of ["VG-7K2M9QXA", "vg-7k2m9qxa", " VG7K2M9QXA ", "7K2M 9QXA", "vg 7k2m-9qxa"]) {
-    assert.deepEqual(parseTrackingLookup({ reference: typed, email: "A@B.co" }), { reference: null, shortCode: "VG-7K2M9QXA", email: "a@b.co" }, typed);
+    assert.deepEqual(parseTrackingLookup({ reference: typed, contact: "+233 24 412 3456" }), { reference: null, shortCode: "VG-7K2M9QXA", email: null, phoneKey: "244123456" }, typed);
   }
-  for (const value of [null, [], "x", {}, { reference }, { email: "a@b.co" },
-    { reference: "VG-short", email: "a@b.co" }, { reference: "VG-7K2M9QX", email: "a@b.co" }, { reference: "VG-7K2M9QXAB", email: "a@b.co" }, { reference: `${reference}0`, email: "a@b.co" },
-    { reference: reference.replace("VG-", "XX-"), email: "a@b.co" },
-    { reference, email: "not-an-email" }, { reference, email: `${"a".repeat(250)}@b.co` },
-    { reference: 5, email: "a@b.co" }]) {
+  // An email still works for orders placed before phone numbers were used.
+  assert.deepEqual(parseTrackingLookup({ reference: "VG-7K2M9QXA", email: " A@B.co " }), { reference: null, shortCode: "VG-7K2M9QXA", email: "a@b.co", phoneKey: null });
+  for (const value of [null, [], "x", {}, { reference }, { contact: "0244123456" },
+    { reference: "VG-short", contact: "0244123456" }, { reference: "VG-7K2M9QX", contact: "0244123456" }, { reference: "VG-7K2M9QXAB", contact: "0244123456" }, { reference: `${reference}0`, contact: "0244123456" },
+    { reference: reference.replace("VG-", "XX-"), contact: "0244123456" },
+    { reference, contact: "12345" }, { reference, contact: "not-a-phone" }, { reference, contact: "a@" }, { reference, contact: `${"a".repeat(250)}@b.co` },
+    { reference: 5, contact: "0244123456" }]) {
     assert.throws(() => parseTrackingLookup(value), FulfillmentInputError, JSON.stringify(value));
   }
-  assert.equal(trackingLookupMatches({ email: "customer@example.com" }, "customer@example.com"), true);
-  assert.equal(trackingLookupMatches({ email: "Customer@Example.com " }, "customer@example.com"), true);
-  assert.equal(trackingLookupMatches({ email: "customer@example.com" }, "other@example.com"), false);
-  assert.equal(trackingLookupMatches(null, "customer@example.com"), false);
+  const phone = { email: null, phoneKey: "244123456" };
+  assert.equal(trackingLookupMatches({ customer: { phone: "0244 123 456" } }, phone), true);
+  assert.equal(trackingLookupMatches({ customer: { phone: "+233244123456" } }, phone), true);
+  assert.equal(trackingLookupMatches({ customer: { phone: "0244123457" } }, phone), false);
+  assert.equal(trackingLookupMatches({ customer: { phone: "12" } }, phone), false);
+  assert.equal(trackingLookupMatches({}, phone), false);
+  assert.equal(trackingLookupMatches(null, phone), false);
+  assert.equal(trackingLookupMatches({ email: "Customer@Example.com " }, { email: "customer@example.com", phoneKey: null }), true);
+  assert.equal(trackingLookupMatches({ email: "customer@example.com" }, { email: "other@example.com", phoneKey: null }), false);
+  assert.equal(trackingLookupMatches({ email: "customer@example.com" }, { email: null, phoneKey: null }), false);
 });
 
 test("customers do not see duplicate or retracted updates", () => {

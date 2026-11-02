@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const preview = findPreviewProduct(slug);
   return preview
     ? { title: preview.name, description: summarize(preview.description), robots: { index: false, follow: true } }
-    : { title: "Piece unavailable", robots: { index: false, follow: false } };
+    : { title: "Not available", robots: { index: false, follow: false } };
 }
 
 export default async function ProductPage({ params }: Props) {

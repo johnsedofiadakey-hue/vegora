@@ -13,7 +13,6 @@ export function CheckoutPage() {
   const [items, setItems] = useState<BagItem[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [zoneId, setZoneId] = useState("");
-  const [city, setCity] = useState("");
   const [loading, setLoading] = useState(true);
   const [available, setAvailable] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -28,12 +27,9 @@ export function CheckoutPage() {
         const data = await response.json() as { zones?: Zone[] };
         if (!Array.isArray(data.zones) || !data.zones.length) return;
         setZones(data.zones);
-        // Never pre-select an area when there is a choice: the delivery fee
-        // depends on it, and a quiet default could be paid for by mistake.
-        if (data.zones.length === 1) {
-          setZoneId(data.zones[0].id);
-          setCity(data.zones[0].cities?.[0] || "");
-        }
+        // Never pick an area for the customer when there is a choice: the delivery
+        // price depends on it, and a quiet default could be paid for by mistake.
+        if (data.zones.length === 1) setZoneId(data.zones[0].id);
         setAvailable(true);
       })
       .catch(() => {})
@@ -52,17 +48,10 @@ export function CheckoutPage() {
     setSubmitting(true);
     setError("");
     const form = new FormData(event.currentTarget);
+    const phone = String(form.get("phone") || "").trim();
     const payload = {
-      email: String(form.get("email") || ""),
-      customer: { name: String(form.get("name") || ""), phone: String(form.get("phone") || "") },
-      delivery: {
-        zoneId: zone.id,
-        addressLine1: String(form.get("addressLine1") || ""),
-        addressLine2: String(form.get("addressLine2") || ""),
-        city: String(form.get("city") || ""),
-        region: zone.region,
-        notes: String(form.get("notes") || ""),
-      },
+      customer: { name: String(form.get("name") || ""), phone },
+      delivery: { zoneId: zone.id, addressLine1: String(form.get("addressLine1") || "") },
       items: items.map(({ slug, variantId, quantity }) => ({ slug, variantId, quantity })),
       idempotencyKey: window.crypto.randomUUID(),
     };
@@ -72,50 +61,47 @@ export function CheckoutPage() {
         body: JSON.stringify(payload), cache: "no-store",
       });
       const result = await response.json() as CheckoutResult;
-      if (!response.ok || !result.authorizationUrl) throw new Error(result.error || "Checkout could not begin. Please try again.");
+      if (!response.ok || !result.authorizationUrl) throw new Error(result.error || "We could not start your order. Please try again.");
       const destination = new URL(result.authorizationUrl);
       if (destination.protocol !== "https:" || !(destination.hostname === "paystack.com" || destination.hostname.endsWith(".paystack.com"))) {
-        throw new Error("The payment destination could not be verified. Please contact VEGORA.");
+        throw new Error("We could not check the payment page. Please contact VEGORA.");
       }
       if (result.reference && /^VG-[0-9a-f]{32}$/.test(result.reference)) {
         window.sessionStorage.setItem(`vegora-checkout-v1:${result.reference}`, JSON.stringify(items.map(({ key, quantity }) => ({ key, quantity }))));
-        window.sessionStorage.setItem(`vegora-checkout-email:${result.reference}`, payload.email.trim().toLowerCase());
+        window.sessionStorage.setItem(`vegora-checkout-contact:${result.reference}`, phone);
       }
       window.location.assign(destination.toString());
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Checkout could not begin. Please try again.");
+      setError(cause instanceof Error ? cause.message : "We could not start your order. Please try again.");
       setSubmitting(false);
     }
   }
 
   return <div className="checkout-page section-pad">
-    <Link className="checkout-back" href="/bag"><ArrowLeft size={15} /> Back to bag</Link>
-    <span className="eyebrow">VEGORA / PRIVATE CHECKOUT</span>
-    <h1>Complete your order</h1>
-    {loading ? <p className="checkout-state">Preparing checkout…</p> : !available ? <div className="checkout-state"><h2>Checkout is being prepared.</h2><p>We will open online orders once payment and delivery are configured.</p><Link className="line-link" href="/bag">Return to your bag <ArrowUpRight size={16} /></Link></div> : !items.length ? <div className="checkout-state"><h2>Your bag is empty.</h2><Link className="line-link" href="/men">Explore the collection <ArrowUpRight size={16} /></Link></div> :
+    <Link className="checkout-back" href="/cart"><ArrowLeft size={15} /> Back to cart</Link>
+    <span className="eyebrow">VEGORA / CHECKOUT</span>
+    <h1>Your details</h1>
+    {loading ? <p className="checkout-state">Getting checkout ready…</p> : !available ? <div className="checkout-state"><h2>Checkout is not open yet.</h2><p>Please check again soon.</p><Link className="line-link" href="/cart">Back to your cart <ArrowUpRight size={16} /></Link></div> : !items.length ? <div className="checkout-state"><h2>Your cart is empty.</h2><Link className="line-link" href="/men">See the clothes <ArrowUpRight size={16} /></Link></div> :
       <div className="checkout-layout">
         <form id="checkout-form" className="checkout-form" onSubmit={submit}>
-          <fieldset><legend>01 / Contact</legend>
+          <fieldset><legend>1. Who is this for?</legend>
             <label>Full name<input name="name" autoComplete="name" required maxLength={150} /></label>
-            <div className="checkout-fields"><label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} /></label><label>Phone number<input name="phone" type="tel" autoComplete="tel" inputMode="tel" required minLength={8} maxLength={30} /></label></div>
+            <label>Phone number<input name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="024 123 4567" required minLength={10} maxLength={30} /><small className="checkout-hint">We will call this number about your delivery. You also use it to track your order.</small></label>
           </fieldset>
-          <fieldset><legend>02 / Delivery in Ghana</legend>
-            <label>Delivery area<select value={zoneId} onChange={(event) => { const next = zones.find((entry) => entry.id === event.target.value); setZoneId(event.target.value); setCity(next?.cities?.[0] || ""); }} required><option value="" disabled>Select your delivery area</option>{zones.map((entry) => <option key={entry.id} value={entry.id}>{entry.label} · {formatMoney(entry.feeMinor)}</option>)}</select></label>
-            <label>Address line 1<input name="addressLine1" autoComplete="address-line1" required maxLength={200} /></label>
-            <label>Address line 2 <span>(optional)</span><input name="addressLine2" autoComplete="address-line2" maxLength={200} /></label>
-            <div className="checkout-fields"><label>City{zone?.cities?.length ? <select name="city" value={city} onChange={(event) => setCity(event.target.value)} required>{zone.cities.map((entry) => <option key={entry} value={entry}>{entry}</option>)}</select> : <input name="city" value={city} onChange={(event) => setCity(event.target.value)} autoComplete="address-level2" required maxLength={100} />}</label><label>Region<input value={zone?.region || ""} readOnly aria-label="Region" /></label></div>
-            <label>Delivery notes <span>(optional)</span><textarea name="notes" rows={3} maxLength={500} placeholder="Landmark or delivery instructions" /></label>
+          <fieldset><legend>2. Where should we deliver?</legend>
+            <div className="checkout-zones" role="radiogroup" aria-label="Delivery area">{zones.map((entry) => <label key={entry.id} className="checkout-zone" data-selected={entry.id === zoneId}><input type="radio" name="zone" value={entry.id} checked={entry.id === zoneId} onChange={() => setZoneId(entry.id)} required /><span>Delivery in {entry.label}</span><strong>{formatMoney(entry.feeMinor)}</strong></label>)}</div>
+            <label>Delivery address<textarea name="addressLine1" rows={3} required maxLength={300} placeholder="House number, street, area, and a place we can find easily" autoComplete="street-address" /></label>
           </fieldset>
-          <p className="checkout-assurance">Your payment is handled securely by Paystack. We confirm an order only after payment verification.</p>
-          <p className="checkout-save-note"><b>Before you pay:</b> after payment you will see an order number. We do not send emails or texts, so take a screenshot of it. You will need it and this email address to track your order on the website any time.</p>
+          <p className="checkout-assurance">You pay safely with Paystack. We only accept your order after the payment works.</p>
+          <p className="checkout-save-note"><b>Please read:</b> after you pay, you will see an order number. We do not send emails or texts, so take a screenshot of it. You need this number and your phone number to track your order on this website.</p>
           {error && <p className="checkout-error" role="alert">{error}</p>}
         </form>
-        <aside className="checkout-summary"><span className="eyebrow">YOUR SELECTION</span><h2>Order summary</h2>
+        <aside className="checkout-summary"><span className="eyebrow">YOUR ORDER</span><h2>Summary</h2>
           <div className="checkout-lines">{items.map((item) => <div key={item.key}><span>{item.name}<small>Size {item.size} · Qty {item.quantity}</small></span><strong>{formatMoney(item.priceMinor * item.quantity)}</strong></div>)}</div>
-          <div className="checkout-totals"><div><span>Subtotal</span><strong>{formatMoney(subtotal)}</strong></div><div><span>Delivery</span><strong>{delivery === null ? "Select your area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total before delivery" : "Total"}</span><strong>{formatMoney(subtotal + (delivery ?? 0))}</strong></div></div>
-          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? "Connecting to Paystack…" : "Continue to secure payment"} <ArrowUpRight size={16} /></button>
-          {!supportedBag && <p className="checkout-error">Your bag needs updating. Please return to your bag before checkout.</p>}
-          <p className="checkout-summary-note">Prices and stock are checked again before payment begins.</p>
+          <div className="checkout-totals"><div><span>Clothes</span><strong>{formatMoney(subtotal)}</strong></div><div><span>Delivery</span><strong>{delivery === null ? "Choose an area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total so far" : "Total"}</span><strong>{formatMoney(subtotal + (delivery ?? 0))}</strong></div></div>
+          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? "Opening Paystack…" : "Pay with Paystack"} <ArrowUpRight size={16} /></button>
+          {!supportedBag && <p className="checkout-error">Something in your cart needs fixing. Please go back to your cart.</p>}
+          <p className="checkout-summary-note">We check the prices and stock again before you pay.</p>
         </aside>
       </div>}
   </div>;

@@ -37,16 +37,16 @@ export function FooterSignup({ privacyHref }: { privacyHref: string | null }) {
   if (status === "done") {
     return <div className="footer-signup" role="status">
       <h3>Thank you.</h3>
-      <p className="footer-signup-lead">You are on the list. We will be in touch.</p>
+      <p className="footer-signup-lead">You are on our list. We will send you news.</p>
     </div>;
   }
 
   return <form className="footer-signup" onSubmit={submit} aria-labelledby={`${id}-title`}>
-    <h3 id={`${id}-title`}>Stay up to date</h3>
-    <p className="footer-signup-lead">New arrivals and offers, straight to your inbox.</p>
+    <h3 id={`${id}-title`}>Get our news</h3>
+    <p className="footer-signup-lead">New clothes and offers. Leave your email and we will write to you.</p>
     <div className="footer-signup-field">
       <label className="footer-signup-sr" htmlFor={`${id}-email`}>Email address</label>
-      <input id={`${id}-email`} type="email" name="email" autoComplete="email" required maxLength={254} placeholder="Your email address"
+      <input id={`${id}-email`} type="email" name="email" autoComplete="email" required maxLength={254} placeholder="Your email"
         value={email} onChange={(event) => setEmail(event.target.value)} disabled={status === "sending"} />
       <button type="submit" aria-label="Sign up" disabled={status === "sending"}><ArrowRight size={20} strokeWidth={1.5} aria-hidden="true" /></button>
     </div>

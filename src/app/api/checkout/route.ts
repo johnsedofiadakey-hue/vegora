@@ -7,7 +7,7 @@ import { clientAddress, createRateLimiter, rateLimited } from "@/lib/server/rate
 export const runtime = "nodejs";
 
 // Every new checkout holds stock for 30 minutes, so starting them is limited.
-const perEmail = createRateLimiter({ limit: 5, windowMs: 10 * 60_000 });
+const perContact = createRateLimiter({ limit: 5, windowMs: 10 * 60_000 });
 const perCaller = createRateLimiter({ limit: 12, windowMs: 10 * 60_000 });
 
 export async function POST(request: Request) {
@@ -16,8 +16,8 @@ export async function POST(request: Request) {
     const caller = perCaller.check(clientAddress(request));
     if (!caller.ok) return rateLimited(caller.retryAfterSeconds);
     const input = parseCheckoutInput(await readJson(request));
-    const email = perEmail.check(input.email);
-    if (!email.ok) return rateLimited(email.retryAfterSeconds);
+    const contact = perContact.check(input.email);
+    if (!contact.ok) return rateLimited(contact.retryAfterSeconds);
     const { order, created } = await reserveOrder(input, config);
     if (!created) {
       if (order.status === "pending_payment" && order.authorizationUrl && new Date().toISOString() < order.reservationExpiresAt) {
