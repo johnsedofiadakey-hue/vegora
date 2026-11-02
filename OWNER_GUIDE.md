@@ -94,7 +94,14 @@ Each order has an **order number** like `VG-7K2M9QXA`. Customers see this number
 3. If you picked a step by mistake you can move back **one** step. **Delivered is final.**
 4. **Internal note** is only for your team. Customers never see it.
 
-Customers follow their order on the **Track order** page (link in the footer) with their order number and the email they used. They see status and dates, and the tracking reference once dispatched. They never see their address or anyone else's details.
+Customers follow their order on the **Track order** page (link in the footer) with their order number and the email they used. They see a progress bar (Order confirmed, Preparing, On its way, Delivered), the dates, what they ordered with the totals, and the tracking reference once dispatched. The page re-checks by itself every minute while it is open. They never see their address or anyone else's details.
+
+**Because the shop sends no emails or texts**, the customer is told in three places to keep their order number: a notice on the checkout page before paying, and, right after paying, a large order-number card with **Copy number**, **Save as picture** and **Share** buttons plus a "take a screenshot now" reminder. If they tick "Remember this order on this device", their next visit to Track order lists the order with a single **View** button (it is kept only in their own browser).
+
+**When a customer rings or messages you:**
+- Keep each order moving: open **Orders**, pick the order, and set the next step. That is what the customer sees; there is no other message to send.
+- Use the **search box** at the top of the Orders list. You can type their order number, email, name or part of their phone number.
+- **If they lost their order number**, search by the email or phone they give, confirm it is theirs (for example, ask for the items or delivery area), and tell them the number.
 
 ## Before checkout can open
 

@@ -180,3 +180,28 @@ test("a mistyped order number is forgiven only where it is unambiguous", () => {
   assert.equal(normalizeShortCode(""), null);
   assert.equal(normalizeShortCode("0123456789abcdef0123456789abcdef"), null);
 });
+
+test("the public tracking view shows the order contents but never personal or internal details", () => {
+  const order = {
+    reference, status: "paid", createdAt: "2026-10-31T10:00:00.000Z", paidAt: "2026-10-31T10:05:00.000Z",
+    fulfillment: { status: "preparing", provider: null, trackingReference: null, updatedAt: "2026-10-31T11:00:00.000Z" },
+    lines: [{ name: "Navy Tee", size: "M", quantity: 2, lineTotalMinor: 20000, sku: "NAVY-M", slug: "navy-tee", variantId: "v1", unitPriceMinor: 10000 }],
+    subtotalMinor: 20000, deliveryFeeMinor: 3000, totalMinor: 23000,
+    delivery: { zoneLabel: "Accra", addressLine1: "12 Private Road", city: "Accra", region: "Greater Accra" },
+    customer: { name: "Private Customer", phone: "0240000000" }, email: "customer@example.com",
+  };
+  const view = publicTrackingView(order, [{ status: "preparing", at: "2026-10-31T11:00:00.000Z" }]);
+  assert.deepEqual(view.items, [{ name: "Navy Tee", size: "M", quantity: 2, lineTotalMinor: 20000 }]);
+  assert.equal(view.deliveryArea, "Accra");
+  assert.equal(view.totalMinor, 23000);
+  assert.equal(view.lastUpdateAt, "2026-10-31T11:00:00.000Z");
+  const text = JSON.stringify(view);
+  for (const secret of ["NAVY-M", "navy-tee", "v1", "12 Private Road", "Private Customer", "0240000000", "customer@example.com", reference]) {
+    assert.equal(text.includes(secret), false, secret);
+  }
+  // Orders written before these fields existed still produce a valid view.
+  const bare = publicTrackingView({ reference, status: "paid", createdAt: "2026-10-31T10:00:00.000Z", paidAt: null }, []);
+  assert.deepEqual(bare.items, []);
+  assert.equal(bare.totalMinor, null);
+  assert.equal(bare.lastUpdateAt, "2026-10-31T10:00:00.000Z");
+});

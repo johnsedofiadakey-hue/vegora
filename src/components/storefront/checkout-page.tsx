@@ -79,6 +79,7 @@ export function CheckoutPage() {
       }
       if (result.reference && /^VG-[0-9a-f]{32}$/.test(result.reference)) {
         window.sessionStorage.setItem(`vegora-checkout-v1:${result.reference}`, JSON.stringify(items.map(({ key, quantity }) => ({ key, quantity }))));
+        window.sessionStorage.setItem(`vegora-checkout-email:${result.reference}`, payload.email.trim().toLowerCase());
       }
       window.location.assign(destination.toString());
     } catch (cause) {
@@ -106,6 +107,7 @@ export function CheckoutPage() {
             <label>Delivery notes <span>(optional)</span><textarea name="notes" rows={3} maxLength={500} placeholder="Landmark or delivery instructions" /></label>
           </fieldset>
           <p className="checkout-assurance">Your payment is handled securely by Paystack. We confirm an order only after payment verification.</p>
+          <p className="checkout-save-note"><b>Before you pay:</b> after payment you will see an order number. We do not send emails or texts, so take a screenshot of it. You will need it and this email address to track your order on the website any time.</p>
           {error && <p className="checkout-error" role="alert">{error}</p>}
         </form>
         <aside className="checkout-summary"><span className="eyebrow">YOUR SELECTION</span><h2>Order summary</h2>

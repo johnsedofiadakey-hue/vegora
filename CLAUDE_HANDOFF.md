@@ -1,8 +1,12 @@
 # VEGORA handoff for Claude
 
-## Update (1 November 2026): home page and footer sign-ups (NOT yet committed or deployed unless the plan file says so)
+## Update (1 November 2026): home page and footer sign-ups
 
 Full handover with checkboxes and a progress log: `PLAN_HOME_ARRIVALS_AND_SIGNUPS.md`. In short: the home page is now hero, short introduction and **new arrivals** (products tagged `new_arrival`), then the footer; the collections / first pieces / edit / closing sections and the featured-pieces picker were removed. The footer has a sign-up form (deals, customization, bulk orders, other) saving to Firestore `signups`, managed in a new admin **Sign-ups** tab (contracts in `ADMIN_SETUP.md`). The site is served on `https://www.shopvegora.com` (bare domain redirects); `apphosting.yaml` now sets `VEGORA_SITE_URL` to it, which takes effect on the next deploy. Do not push or deploy without the user's go-ahead.
+
+## Update (2 November 2026): tracking without email or SMS (decision: none will be added)
+
+Checkout is open in **live Paystack mode** with Accra GH₵30 and Tema GH₵50 (all in `apphosting.yaml`). The owner decided not to send emails or texts, so tracking is self-service: `/track` (progress bar, items and totals, refresh, auto re-check every minute, `?order=` links, optional "remember on this device" in localStorage), a large order-number card with copy / save-as-picture / share on the payment return page, a screenshot warning on the checkout page, and a search box on the admin Orders list. Contract in `ADMIN_SETUP.md` ("Checkout gate"). No real payment has been tested yet: the first live order and refund will show whether the webhook works. The alert exclusion for 503 on `/api/checkout/zones` should now be removed.
 
 ## Status update (31 October 2026, evening). Read this first
 

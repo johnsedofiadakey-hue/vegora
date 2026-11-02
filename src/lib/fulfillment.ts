@@ -202,16 +202,31 @@ export function publicMilestones(events: Pick<FulfillmentEvent, "status" | "at">
   });
 }
 
+export interface PublicTrackingItem { name: string; size: string; quantity: number; lineTotalMinor: number }
+
+/** What the Track page may show: no name, phone, address, email, SKU, payment reference or operator notes. */
 export function publicTrackingView(order: {
   reference: string;
   status: string;
   createdAt: string;
   paidAt: string | null;
   fulfillment?: Fulfillment;
+  lines?: { name: string; size: string; quantity: number; lineTotalMinor: number }[];
+  subtotalMinor?: number;
+  deliveryFeeMinor?: number;
+  totalMinor?: number;
+  delivery?: { zoneLabel?: string };
 }, events: Pick<FulfillmentEvent, "status" | "at">[]) {
   const fulfillment = order.fulfillment ?? emptyFulfillment;
   const paid = order.status === "paid";
   const showTracking = paid && requiresTrackingReference(fulfillment.status);
+  const updates = paid ? publicMilestones(events) : [];
+  const latest = [order.createdAt, order.paidAt, ...updates.map((update) => update.at)]
+    .filter((value): value is string => typeof value === "string")
+    .reduce((newest, value) => (Date.parse(value) > Date.parse(newest) ? value : newest), order.createdAt);
+  const items: PublicTrackingItem[] = (order.lines ?? []).map((line) => ({
+    name: line.name, size: line.size, quantity: line.quantity, lineTotalMinor: line.lineTotalMinor,
+  }));
   return {
     orderId: shortOrderCode(order.reference) ?? order.reference,
     paymentStatus: order.status,
@@ -220,6 +235,12 @@ export function publicTrackingView(order: {
     fulfillmentStatus: paid ? fulfillment.status : "unfulfilled",
     provider: showTracking ? fulfillment.provider : null,
     trackingReference: showTracking ? fulfillment.trackingReference : null,
-    updates: paid ? publicMilestones(events) : [],
+    updates,
+    lastUpdateAt: latest,
+    deliveryArea: order.delivery?.zoneLabel ?? null,
+    items,
+    subtotalMinor: order.subtotalMinor ?? null,
+    deliveryFeeMinor: order.deliveryFeeMinor ?? null,
+    totalMinor: order.totalMinor ?? null,
   };
 }

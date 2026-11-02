@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, RefreshCw, Search } from "lucide-react";
 import type { Product } from "@/lib/catalog";
 import { formatGhs } from "@/lib/catalog";
 import { shortOrderCode, type Fulfillment, type FulfillmentEvent, type FulfillmentInput } from "@/lib/fulfillment";
@@ -67,7 +68,16 @@ export function OrdersView({ orders, products, selected, detailOpen, events, mes
   onSaveFulfillment: (reference: string, input: FulfillmentInput) => Promise<void>;
 }) {
   const cover = new Map(products.map((product) => [product.slug, product.images[0]?.url]));
-  const order = orders.find((item) => item.reference === selected) ?? orders[0];
+  const [query, setQuery] = useState("");
+  // Customers quote their order number, or the email they used: find either quickly.
+  const needle = query.trim().toLowerCase().replace(/\s+/g, "");
+  const digits = needle.replace(/[^0-9]/g, "");
+  const visible = !needle ? orders : orders.filter((item) =>
+    (shortOrderCode(item.reference) ?? "").toLowerCase().replace("-", "").includes(needle.replace("-", "")) ||
+    item.reference.toLowerCase().includes(needle) || item.email.toLowerCase().includes(needle) ||
+    item.customer.name.toLowerCase().replace(/\s+/g, "").includes(needle) ||
+    (digits.length >= 4 && item.customer.phone.replace(/[^0-9]/g, "").includes(digits)));
+  const order = visible.find((item) => item.reference === selected) ?? visible[0] ?? (needle ? undefined : orders[0]);
   const todo = orders.filter(needsDelivery).length;
   const when = (value: string) => new Date(value).toLocaleString("en-GH", { dateStyle: "medium", timeStyle: "short" });
 
@@ -79,7 +89,9 @@ export function OrdersView({ orders, products, selected, detailOpen, events, mes
       </div>
       <p className={styles.lead}>{orders.length === 0 ? "Paid orders will appear here." : todo > 0 ? `${todo} paid ${todo === 1 ? "order needs" : "orders need"} packing or delivery.` : "Every paid order has been delivered."}</p>
       {message && !detailOpen && <p role="status" className={admin.message}>{message}</p>}
-      <ul>{orders.map((item) => <li key={item.reference}>
+      {orders.length > 0 && <label className={styles.orderSearch}><Search size={15} aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find by order number, email, name or phone" aria-label="Find an order" autoComplete="off" /></label>}
+      {needle && visible.length === 0 && <p className={styles.lead} role="status">No order matches “{query.trim()}”. Check the spelling, or try the email the customer used.</p>}
+      <ul>{visible.map((item) => <li key={item.reference}>
         <button type="button" aria-current={order?.reference === item.reference ? "true" : undefined} onClick={() => onSelect(item.reference)}>
           <Thumb src={cover.get(item.lines[0]?.slug)} size={48} />
           <span className={styles.orderLine}>
