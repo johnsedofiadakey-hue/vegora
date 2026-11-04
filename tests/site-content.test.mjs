@@ -41,7 +41,7 @@ test("the homepage defaults use short, plain wording", () => {
   assert.equal(home.arrivalsLead, "Our newest");
   assert.equal(home.arrivalsEmphasis, "clothes.");
   assert.equal(home.arrivalsLinkLabel, "See all new clothes");
-  assert.equal(defaultValues("about").body.split("\n\n").length, 2);
+  assert.equal(defaultValues("about").body.split("\n\n").length, 3);
 });
 
 test("text is plain: no markup, no control characters, length limits enforced", () => {

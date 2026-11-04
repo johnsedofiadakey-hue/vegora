@@ -180,11 +180,14 @@ a { color:inherit; text-decoration:none; }
 .edit-copy { padding:140px 20px 160px; text-align:center; }
 .edit-copy>span { font-size:10px; letter-spacing:.22em; }
 .edit-copy h2 { margin:24px 0; font:normal clamp(62px,8vw,122px)/.95 var(--serif); letter-spacing:-.06em; }
-.edit-copy p { max-width:520px; margin:0 auto 36px; color:var(--muted); line-height:1.7; }
-.edit-copy>div { display:flex; justify-content:center; gap:40px; }
+.edit-copy p { max-width:520px; margin:0 auto 1.2em; color:var(--muted); line-height:1.7; }
+.edit-copy>div { display:flex; justify-content:center; gap:40px; margin-top:36px; }
 .about-page { min-height:75vh; max-width:1050px; padding:120px clamp(20px,4.25vw,72px) 160px; }
-.about-page h1 { margin:25px 0 50px; font:normal clamp(76px,11vw,160px)/.9 var(--serif); letter-spacing:-.06em; text-transform:uppercase; }
-.about-page p { max-width:600px; font:20px/1.5 var(--serif); }
+.about-page h1 { margin:25px 0 50px; font:normal clamp(76px,9vw,140px)/.9 var(--serif); letter-spacing:-.06em; text-transform:uppercase; }
+.about-page p { max-width:600px; margin:0 0 1em; font:20px/1.5 var(--serif); }
+.about-page section { margin-top:64px; }
+.about-page h2 { margin:0 0 18px; font:normal clamp(34px,4vw,48px)/1.05 var(--serif); letter-spacing:-.03em; }
+.about-page .about-signature { margin-top:64px; font-style:italic; }
 .about-page .line-link { margin-top:30px; }
 .product-state { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:65vh; padding:70px 20px; text-align:center; }
 .product-state h1 { margin:0; font:normal 58px var(--serif); }
@@ -387,7 +390,7 @@ a { color:inherit; text-decoration:none; }
   .edit-copy h2 { font-size:clamp(55px,11vw,85px); }
   .edit-copy>div { gap:20px; flex-wrap:wrap; }
   .about-page { padding-top:90px; padding-bottom:110px; }
-  .about-page h1 { font-size:clamp(64px,15vw,105px); }
+  .about-page h1 { font-size:clamp(44px,13vw,105px); }
   .product-page { grid-template-columns:1fr; }
   .product-gallery { padding:16px 20px 0; }
   .product-main-image { aspect-ratio:4/5; }
