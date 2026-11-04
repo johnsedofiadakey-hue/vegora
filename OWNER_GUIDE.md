@@ -2,7 +2,7 @@
 
 A plain-language guide for the person who looks after the shop. You do not need to know anything about code.
 
-Everything is done in the **Studio admin** at the website address followed by `/admin`, for example `https://vegora--vegoragh.europe-west4.hosted.app/admin`. Its menu has four sections: **Products**, **Orders**, **Website text** (called Content in older notes) and **Sign-ups**. On a computer the menu is down the left side; on a phone, tap the ☰ button at the top left.
+Everything is done in the **Studio admin** at the website address followed by `/admin`, that is `https://www.shopvegora.com/admin` (bookmark it: there is no link to it on the shop). Its menu has four sections: **Products**, **Orders**, **Website text** (called Content in older notes) and **Sign-ups**. On a computer the menu is down the left side; on a phone, tap the ☰ button at the top left.
 
 **Getting a product ready to sell:** open **Products** and tap the product. Type the price, tap **+ S, M, L, XL** (or add other sizes), and enter how many of each size you have. The box at the top shows what is still missing; when everything is ticked, tap **Save and publish**. To take it off the shop again, tap **Hide from shop**. The stock code (SKU) is filled in automatically. Orders show a photo of each item, and the Orders menu item shows how many paid orders still need packing or delivery.
 

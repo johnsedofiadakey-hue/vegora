@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { Wordmark } from "./wordmark";
 import { FooterSignup } from "./footer-signup";
+import { PaymentMethods } from "./payment-methods";
 import { WomenOnly } from "./collection-availability";
 import { getContent } from "@/lib/server/site-content-cache";
 import { contactChannels, policyIsLive, socialLinks } from "@/lib/site-content";
@@ -25,6 +25,7 @@ export async function SiteFooter() {
         {social.length > 0 && <div><span>Follow</span>{social.map(({ platform, href }) => <a key={platform} href={href} target="_blank" rel="noreferrer">{socialName[platform]}</a>)}</div>}
       </div>
     </div>
-    <div className="footer-bottom"><span>© {new Date().getFullYear()} VEGORA</span><span>Elevate Your Style</span><Link className="footer-admin-link" href="/admin">Admin portal <ArrowUpRight size={13} aria-hidden="true" /></Link></div>
+    <PaymentMethods />
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} VEGORA</span><span>Elevate Your Style</span></div>
   </footer>;
 }

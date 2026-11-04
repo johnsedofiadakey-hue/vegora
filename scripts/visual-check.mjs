@@ -48,7 +48,8 @@ try {
     await page.screenshot({ path: `/tmp/vegora-${width}-full.png`, fullPage: true });
     console.log(JSON.stringify({ ...state, layering }));
     if (width === 390) {
-      if (await page.locator(".footer-admin-link").getAttribute("href") !== "/admin") throw new Error("Admin footer link is missing");
+      if (await page.locator('.site-footer a[href="/admin"]').count() !== 0) throw new Error("The footer should not link to the admin");
+      if (await page.locator(".payment-methods li").count() !== 5) throw new Error("Payment method logos are missing");
       // Previews only fill an empty collection, so check them against an empty catalog whatever is published.
       await page.route("**/api/products?*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ products: [] }) }));
       await page.getByRole("button", { name: "Open menu" }).click();
