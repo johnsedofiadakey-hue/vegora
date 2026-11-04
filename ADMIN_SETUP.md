@@ -62,6 +62,10 @@ The footer form (`src/components/storefront/footer-signup.tsx`) is a single emai
 
 Admin routes (Firebase ID token with `admin: true`): `GET /api/admin/signups` returns the newest 500 (`{ signups, truncated }`) and `DELETE /api/admin/signups/[id]` removes one (id is 32 hex characters). The admin **Sign-ups** tab filters by interest, copies emails, downloads a CSV (cells starting with `= + - @` are prefixed with an apostrophe against spreadsheet formula injection) and deletes with an on-page confirmation. No email is sent to sign-ups; there is no mail service yet. Firestore rules deny all client access, as for every collection.
 
+## Wishlist
+
+`src/components/storefront/wishlist-store.ts` keeps up to 48 product slugs, newest first, in `localStorage` under `vegora-wishlist-v1` and shares them through `useSyncExternalStore` (same-tab event plus the `storage` event for other tabs). Nothing is sent to the server. `/wishlist` loads each slug from `GET /api/products/[slug]`, so prices and availability are current; a 404 is listed as no longer in the shop. Hearts appear on `ProductCard` and the product page (not on previews); the header shows the count. `/wishlist` is `noindex` and disallowed in `robots.txt`.
+
 ## Checkout gate
 
 For local key setup, copy `.env.example` to `.env.local`, paste only the Paystack **Test Secret Key** into `PAYSTACK_SECRET_KEY=`, then run `npm run check:paystack`. The check contacts Paystack and reports acceptance without printing the key. The hosted checkout does not need a browser public key. `.env.local` is Git-ignored. Keep checkout switches unset while delivery rules and the public test webhook are being prepared.

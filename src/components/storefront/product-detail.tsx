@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addToBag } from "./bag-store";
+import { WishlistButton } from "./wishlist-button";
 import { Product, formatMoney } from "./catalog-types";
 import { findPreviewProduct, previewPriceMinor } from "@/lib/preview-products";
 
@@ -76,7 +77,7 @@ export function ProductDetail({ slug }: { slug: string }) {
       <div className="product-main-image">{product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt || product.name} width={800} height={1000} sizes="(max-width: 767px) 100vw, 50vw" priority /> : <span>VEGORA</span>}</div>
       {product.images.length > 1 && <div className="product-thumbnails" aria-label="Product images">{product.images.map((image, index) => <button key={`${image.url}-${index}`} type="button" aria-label={`Show image ${index + 1}`} aria-pressed={activeImage === index} onClick={() => setActiveImage(index)}><Image src={image.url} alt="" width={80} height={100} sizes="80px" /></button>)}</div>}
     </div>
-    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to the clothes</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p><p className="product-description">{product.description}</p>
+    <div className="product-info"><Link href={isPreview ? "/men" : "/new-in"} className="product-back"><ArrowLeft size={16} /> Back to the clothes</Link><span className="eyebrow">VEGORA / {product.category}</span>{!!product.tags?.length && <div className="product-detail-tags">{product.tags.map((tag) => <span key={tag}>{tag === "new_arrival" ? "New arrival" : "Best seller"}</span>)}</div>}<h1>{product.name}</h1><p className="product-price">{formatMoney(product.priceMinor, product.currency)}{isPreview && <span className="test-price-label">Test price</span>}</p>{!isPreview && <WishlistButton slug={product.slug} name={product.name} variant="detail" />}<p className="product-description">{product.description}</p>
       {isPreview ? <div className="product-preview-notice"><span>Coming soon</span><p>This item is not on sale yet. The price shown is not final. We will add the real price and sizes soon.</p></div> : <>
         <fieldset className="size-picker" ref={sizePicker}><legend>Select size</legend><div>{product.variants.map((variant) => <button key={variant.id} type="button" disabled={variant.stock < 1} aria-pressed={variantId === variant.id} onClick={() => { setVariantId(variant.id); setQuantity(1); setFeedback(""); }}>{variant.size}</button>)}</div></fieldset>
         <p className="stock-note">{!product.variants.length ? "Sizes coming soon" : !hasAvailableSize ? "Sold out" : !chosenVariant ? "Choose a size first" : `${chosenVariant.stock} available in this size`}</p>

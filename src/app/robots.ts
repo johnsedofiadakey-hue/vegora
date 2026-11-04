@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
   if (!indexingAllowed()) return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {
     // /api/image stays open: it serves the photographs that search and share previews show.
-    rules: [{ userAgent: "*", allow: ["/", "/api/image"], disallow: ["/admin", "/api/", "/checkout", "/cart", "/bag", "/track", "/search"] }],
+    rules: [{ userAgent: "*", allow: ["/", "/api/image"], disallow: ["/admin", "/api/", "/checkout", "/cart", "/bag", "/wishlist", "/track", "/search"] }],
     sitemap: `${siteOrigin()}/sitemap.xml`,
   };
 }

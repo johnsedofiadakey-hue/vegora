@@ -136,3 +136,7 @@ These need your decisions. Your developer will do the technical side:
 - The system keeps **7 days** of history behind the scenes. If something important is deleted by mistake, tell your developer straight away.
 - Site monitoring and email alerts are configured; ask your developer to confirm alert delivery if the site has a problem.
 - Never send your password or payment keys by message or email.
+
+## Wishlist
+
+Customers can tap the heart on any piece (on its photo, or "Save to wishlist" on its page) to save it. The heart at the top of every page opens **Your wishlist**. It is kept in the customer's own browser, like the cart: it stays after a refresh or when they come back later on the same phone or computer, but it does not move to another device, and you cannot see wishlists in the admin. Saved pieces always show their current price; one you hide or archive shows as "no longer in the shop" with a button to remove it.

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, ShoppingCart, X } from "lucide-react";
+import { Heart, Menu, Search, ShoppingCart, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Wordmark } from "./wordmark";
 import { useWomenAvailable } from "./collection-availability";
 import { readBag } from "./bag-store";
+import { useWishlist } from "./wishlist-store";
 
 const nav = [
   { href: "/women", label: "Women" },
@@ -21,6 +22,7 @@ export function SiteHeader() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [bagCount, setBagCount] = useState(0);
+  const savedCount = useWishlist().length;
 
   useEffect(() => {
     const update = () => setBagCount(readBag().reduce((total, item) => total + item.quantity, 0));
@@ -61,6 +63,7 @@ export function SiteHeader() {
           </nav>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label={searchOpen ? "Close search" : "Search"} aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={22} strokeWidth={1.35} /></button>
+            <Link className="icon-button bag-link" href="/wishlist" aria-label={savedCount > 0 ? `Your wishlist, ${savedCount} saved` : "Your wishlist"}><Heart size={21} strokeWidth={1.35} />{savedCount > 0 && <span className="bag-count" aria-hidden="true">{savedCount}</span>}</Link>
             <Link className="icon-button bag-link" href="/cart" aria-label={bagCount > 0 ? `Your cart, ${bagCount} ${bagCount === 1 ? "item" : "items"}` : "Your cart"}><ShoppingCart size={22} strokeWidth={1.35} />{bagCount > 0 && <span className="bag-count" aria-hidden="true">{bagCount}</span>}</Link>
           </div>
         </div>
