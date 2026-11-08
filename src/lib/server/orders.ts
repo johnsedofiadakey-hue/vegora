@@ -10,6 +10,8 @@ import { paymentAction, type OrderStatus } from "./payment-policy";
 import { paymentConfig } from "./checkout-config";
 import { verifyPaystack } from "./paystack";
 import { placeholderEmail } from "../contact";
+import { computeDiscount, normalizeVoucherCode, voucherMessage, voucherProblem } from "../voucher";
+import { formatMinor, readVoucher, readVoucherSettings, voucherCustomerRef, voucherEventRef, voucherRef } from "./vouchers";
 import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput, shortOrderCode,
   trackingLookupMatches, type TrackingLookup, type Fulfillment, type FulfillmentEvent, type FulfillmentEventKind, type FulfillmentInput,
   type FulfillmentStatus } from "../fulfillment";
@@ -23,6 +25,8 @@ export interface CheckoutInput {
   delivery: { zoneId: string; addressLine1: string; addressLine2: string; city: string; region: string; notes: string };
   items: CheckoutItem[];
   idempotencyKey: string;
+  /** Normalised voucher code, or null. Only the code is accepted from the browser; the server works out the rest. */
+  voucherCode: string | null;
 }
 export interface OrderLine extends CheckoutItem { name: string; size: string; sku: string; unitPriceMinor: number; lineTotalMinor: number }
 export interface Order {
@@ -34,6 +38,9 @@ export interface Order {
   delivery: CheckoutInput["delivery"] & { zoneLabel: string; feeMinor: number };
   lines: OrderLine[];
   subtotalMinor: number;
+  /** Taken off the clothes by a voucher (0 when none). totalMinor = subtotal - discount + delivery. */
+  discountMinor?: number;
+  voucher?: { code: string; percentOff: number; label: string } | null;
   deliveryFeeMinor: number;
   totalMinor: number;
   currency: "GHS";
@@ -60,6 +67,43 @@ function object(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+export function parseCartItems(value: unknown): CheckoutItem[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 30) {
+    throw new HttpError(400, "Choose 1–30 items");
+  }
+  const items = value.map((line) => {
+    const item = object(line);
+    const slug = boundedText(item.slug, "Product", 80);
+    const variantId = boundedText(item.variantId, "Size", 80);
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !/^[a-zA-Z0-9_-]{1,80}$/.test(variantId) ||
+        !Number.isSafeInteger(item.quantity) || Number(item.quantity) < 1 || Number(item.quantity) > 10) {
+      throw new HttpError(400, "Invalid item or quantity");
+    }
+    return { slug, variantId, quantity: Number(item.quantity) };
+  });
+  if (new Set(items.map((item) => `${item.slug}:${item.variantId}`)).size !== items.length) {
+    throw new HttpError(400, "The same size is in your cart twice");
+  }
+  return items;
+}
+
+/** The price of the clothes in a cart, worked out from the catalogue. Used to preview a voucher. */
+export async function quoteClothes(items: CheckoutItem[]): Promise<number> {
+  const slugs = [...new Set(items.map((item) => item.slug))];
+  const snaps = await storeDb().getAll(...slugs.map((slug) => storeDb().collection("products").doc(slug)));
+  const records = new Map<string, StoredProduct>();
+  slugs.forEach((slug, index) => {
+    const record = readStoredProduct(snaps[index].data());
+    if (!record || record.status !== "published" || record.priceMinor === null) throw new HttpError(409, "An item in your cart is no longer available");
+    records.set(slug, record);
+  });
+  return items.reduce((sum, item) => {
+    const product = records.get(item.slug)!;
+    if (!product.variants.some((variant) => variant.id === item.variantId)) throw new HttpError(409, `${product.name} is no longer available in the selected size`);
+    return sum + product.priceMinor! * item.quantity;
+  }, 0);
+}
+
 export function parseCheckoutInput(value: unknown): CheckoutInput {
   const input = object(value);
   const customer = object(input.customer);
@@ -78,21 +122,11 @@ export function parseCheckoutInput(value: unknown): CheckoutInput {
   const city = "";
   const region = "";
   const notes = "";
-  if (!Array.isArray(input.items) || input.items.length === 0 || input.items.length > 30) {
-    throw new HttpError(400, "Choose 1–30 items");
-  }
-  const items = input.items.map((line) => {
-    const item = object(line);
-    const slug = boundedText(item.slug, "Product", 80);
-    const variantId = boundedText(item.variantId, "Size", 80);
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !/^[a-zA-Z0-9_-]{1,80}$/.test(variantId) ||
-        !Number.isSafeInteger(item.quantity) || Number(item.quantity) < 1 || Number(item.quantity) > 10) {
-      throw new HttpError(400, "Invalid item or quantity");
-    }
-    return { slug, variantId, quantity: Number(item.quantity) };
-  });
-  if (new Set(items.map((item) => `${item.slug}:${item.variantId}`)).size !== items.length) {
-    throw new HttpError(400, "The same size is in your cart twice");
+  const items = parseCartItems(input.items);
+  let voucherCode: string | null = null;
+  if (input.voucherCode !== undefined && input.voucherCode !== null && input.voucherCode !== "") {
+    voucherCode = normalizeVoucherCode(input.voucherCode);
+    if (!voucherCode) throw new HttpError(400, voucherMessage({ reason: "unavailable" }, formatMinor));
   }
   const idempotencyKey = boundedText(input.idempotencyKey, "Checkout key", 36);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
@@ -100,7 +134,7 @@ export function parseCheckoutInput(value: unknown): CheckoutInput {
   }
   return { email, customer: { name, phone },
     delivery: { zoneId, addressLine1, addressLine2, city, region, notes },
-    items, idempotencyKey: idempotencyKey.toLowerCase() };
+    items, idempotencyKey: idempotencyKey.toLowerCase(), voucherCode };
 }
 
 export function checkoutFingerprint(input: CheckoutInput): string {
@@ -120,9 +154,9 @@ function recordEvent(tx: FirebaseFirestore.Transaction, order: Order, action: st
   });
 }
 
-function checkedTotal(lines: OrderLine[], zone: DeliveryZone): { subtotalMinor: number; totalMinor: number } {
+function checkedTotal(lines: OrderLine[], zone: DeliveryZone, discountMinor: number): { subtotalMinor: number; totalMinor: number } {
   const subtotalMinor = lines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
-  const totalMinor = subtotalMinor + zone.feeMinor;
+  const totalMinor = subtotalMinor - discountMinor + zone.feeMinor;
   if (!Number.isSafeInteger(totalMinor) || totalMinor < 10 || totalMinor > 10_000_000_00) {
     throw new HttpError(400, "Order amount is outside the supported range");
   }
@@ -170,15 +204,41 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
         unitPriceMinor: product.priceMinor!, lineTotalMinor });
       variant.reserved += item.quantity;
     }
-    const { subtotalMinor, totalMinor } = checkedTotal(lines, zone);
+    const clothesMinor = lines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
+    // Voucher: every rule is checked here, in the same transaction that holds the stock,
+    // so two people can never both take the last use of a voucher.
+    let discountMinor = 0;
+    let voucherUse: { code: string; percentOff: number; label: string } | null = null;
+    let voucherWrites: (() => void) | null = null;
+    if (input.voucherCode) {
+      const [voucherSnap, customerSnap, settingsSnap] = await Promise.all([
+        tx.get(voucherRef(input.voucherCode)),
+        tx.get(voucherCustomerRef(input.voucherCode, input.customer.phone)),
+        tx.get(storeDb().collection("settings").doc("vouchers")),
+      ]);
+      const voucher = readVoucher(voucherSnap.data());
+      const customerUses = Number(customerSnap.data()?.active ?? 0) || 0;
+      const problem = voucherProblem(voucher, { now: now.toISOString(), subtotalMinor: clothesMinor, customerUses, settings: readVoucherSettings(settingsSnap.data()) });
+      if (problem || !voucher) throw new HttpError(400, voucherMessage(problem ?? { reason: "unavailable" }, formatMinor));
+      discountMinor = computeDiscount(clothesMinor, voucher.percentOff, voucher.maxDiscountMinor);
+      if (discountMinor <= 0) throw new HttpError(400, voucherMessage({ reason: "unavailable" }, formatMinor));
+      voucherUse = { code: voucher.code, percentOff: voucher.percentOff, label: voucher.label };
+      voucherWrites = () => {
+        tx.set(voucherRef(voucher.code), { ...voucher, reserved: voucher.reserved + 1, updatedAt: now.toISOString() });
+        tx.set(voucherCustomerRef(voucher.code, input.customer.phone), { active: customerUses + 1, updatedAt: now.toISOString() });
+        tx.set(voucherEventRef(`${voucher.code}-${reference}-reserved`), { code: voucher.code, action: "reserved", order: reference, discountMinor, at: now.toISOString() });
+      };
+    }
+    const { subtotalMinor, totalMinor } = checkedTotal(lines, zone, discountMinor);
     const order: Order = { reference, fingerprint, status: "initializing", email: input.email,
       customer: input.customer,
       delivery: { ...input.delivery, zoneLabel: zone.label, feeMinor: zone.feeMinor },
-      lines, subtotalMinor, deliveryFeeMinor: zone.feeMinor, totalMinor, currency: "GHS",
+      lines, subtotalMinor, discountMinor, voucher: voucherUse, deliveryFeeMinor: zone.feeMinor, totalMinor, currency: "GHS",
       authorizationUrl: null, createdAt: now.toISOString(), updatedAt: now.toISOString(),
       reservationExpiresAt: expiresAt, paymentStatus: null, paidAt: null,
       fulfillment: { ...emptyFulfillment }, shortCode: shortOrderCode(reference) ?? undefined };
     for (const [slug, record] of records) tx.set(storeDb().collection("products").doc(slug), record);
+    voucherWrites?.();
     tx.create(orderRef(reference), order);
     tx.create(keyRef, { reference, fingerprint, createdAt: now.toISOString() });
     recordEvent(tx, order, "reserved", "initializing");
@@ -206,6 +266,11 @@ async function settleReservation(tx: FirebaseFirestore.Transaction, order: Order
   const slugs = [...new Set(order.lines.map((line) => line.slug))];
   const refs = slugs.map((slug) => storeDb().collection("products").doc(slug));
   const snaps = await tx.getAll(...refs);
+  // A voucher use follows the stock: it becomes a redemption when payment is captured
+  // and is given back when the order is released. Reads come first, writes at the end.
+  const voucherCode = order.voucher?.code;
+  const voucherSnap = voucherCode ? await tx.get(voucherRef(voucherCode)) : null;
+  const customerSnap = voucherCode ? await tx.get(voucherCustomerRef(voucherCode, order.customer.phone)) : null;
   const records = new Map<string, StoredProduct>();
   for (let index = 0; index < slugs.length; index++) {
     const record = readStoredProduct(snaps[index].data());
@@ -219,6 +284,20 @@ async function settleReservation(tx: FirebaseFirestore.Transaction, order: Order
     if (mode === "capture") variant.stock -= line.quantity;
   }
   for (const [slug, record] of records) tx.set(storeDb().collection("products").doc(slug), record);
+  const voucher = readVoucher(voucherSnap?.data());
+  if (voucherCode && voucher) {
+    const at = new Date().toISOString();
+    const reserved = Math.max(0, voucher.reserved - 1);
+    if (mode === "capture") {
+      tx.set(voucherRef(voucherCode), { ...voucher, reserved, redeemed: voucher.redeemed + 1, updatedAt: at });
+    } else {
+      tx.set(voucherRef(voucherCode), { ...voucher, reserved, updatedAt: at });
+      const held = Number(customerSnap?.data()?.active ?? 0) || 0;
+      tx.set(voucherCustomerRef(voucherCode, order.customer.phone), { active: Math.max(0, held - 1), updatedAt: at });
+    }
+    tx.set(voucherEventRef(`${voucherCode}-${order.reference}-${mode === "capture" ? "redeemed" : "released"}`),
+      { code: voucherCode, action: mode === "capture" ? "redeemed" : "released", order: order.reference, at });
+  }
   return true;
 }
 

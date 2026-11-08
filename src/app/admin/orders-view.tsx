@@ -6,6 +6,7 @@ import { ArrowLeft, RefreshCw, Search } from "lucide-react";
 import type { Product } from "@/lib/catalog";
 import { formatGhs } from "@/lib/catalog";
 import { isPlaceholderEmail } from "@/lib/contact";
+import { formatVoucherCode } from "@/lib/voucher";
 import { shortOrderCode, type Fulfillment, type FulfillmentEvent, type FulfillmentInput } from "@/lib/fulfillment";
 import { FulfillmentEditor } from "./fulfillment-editor";
 import admin from "./admin.module.css";
@@ -19,6 +20,8 @@ export interface AdminOrder {
   delivery: { zoneLabel: string; addressLine1: string; addressLine2: string; city: string; region: string; notes: string };
   lines: { slug: string; name: string; size: string; sku: string; quantity: number; unitPriceMinor?: number; lineTotalMinor: number }[];
   subtotalMinor: number;
+  discountMinor?: number;
+  voucher?: { code: string; percentOff: number; label: string } | null;
   deliveryFeeMinor: number;
   totalMinor: number;
   createdAt: string;
@@ -123,9 +126,11 @@ export function OrdersView({ orders, products, selected, detailOpen, events, mes
           </li>)}</ul>
           <dl className={styles.totals}>
             <div><dt>Subtotal</dt><dd>{formatGhs(order.subtotalMinor)}</dd></div>
+            {!!order.discountMinor && <div><dt>Voucher{order.voucher ? ` ${order.voucher.percentOff}% off` : ""}</dt><dd>−{formatGhs(order.discountMinor)}</dd></div>}
             <div><dt>Delivery</dt><dd>{formatGhs(order.deliveryFeeMinor)}</dd></div>
             <div><dt>Total</dt><dd>{formatGhs(order.totalMinor)}</dd></div>
           </dl>
+          {order.voucher && <p className={styles.fieldNote}>Voucher {formatVoucherCode(order.voucher.code)} · {order.voucher.label}</p>}
         </div>
 
         <div className={styles.card}>

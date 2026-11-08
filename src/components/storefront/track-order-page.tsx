@@ -24,6 +24,7 @@ type TrackingResult = {
   deliveryArea: string | null;
   items: { name: string; size: string; quantity: number; lineTotalMinor: number }[];
   subtotalMinor: number | null;
+  discountMinor: number;
   deliveryFeeMinor: number | null;
   totalMinor: number | null;
 };
@@ -198,7 +199,7 @@ export function TrackOrderPage() {
 
           {tracking.items.length > 0 && <div className="track-items"><span className="track-block-title">YOUR ORDER{tracking.deliveryArea ? ` · DELIVERY IN ${tracking.deliveryArea.toUpperCase()}` : ""}</span>
             <ul>{tracking.items.map((item, index) => <li key={`${item.name}-${item.size}-${index}`}><span>{item.name}<small>Size {item.size} · Qty {item.quantity}</small></span><strong>{formatMoney(item.lineTotalMinor)}</strong></li>)}</ul>
-            {tracking.totalMinor !== null && <dl>{tracking.subtotalMinor !== null && <div><dt>Subtotal</dt><dd>{formatMoney(tracking.subtotalMinor)}</dd></div>}{tracking.deliveryFeeMinor !== null && <div><dt>Delivery</dt><dd>{formatMoney(tracking.deliveryFeeMinor)}</dd></div>}<div><dt>Total</dt><dd>{formatMoney(tracking.totalMinor)}</dd></div></dl>}</div>}
+            {tracking.totalMinor !== null && <dl>{tracking.subtotalMinor !== null && <div><dt>Subtotal</dt><dd>{formatMoney(tracking.subtotalMinor)}</dd></div>}{tracking.discountMinor > 0 && <div><dt>Voucher</dt><dd>−{formatMoney(tracking.discountMinor)}</dd></div>}{tracking.deliveryFeeMinor !== null && <div><dt>Delivery</dt><dd>{formatMoney(tracking.deliveryFeeMinor)}</dd></div>}<div><dt>Total</dt><dd>{formatMoney(tracking.totalMinor)}</dd></div></dl>}</div>}
 
           <ol className="track-timeline"><li><strong>You ordered</strong><span>{dateLabel(tracking.placedAt)}</span></li>{tracking.paidAt && <li><strong>Payment received</strong><span>{dateLabel(tracking.paidAt)}</span></li>}{tracking.updates.map((update, index) => <li key={`${update.at}-${index}`}><strong>{statusCopy[update.status as Stage] ?? update.status.replaceAll("_", " ")}</strong><span>{dateLabel(update.at)}</span></li>)}</ol>
 

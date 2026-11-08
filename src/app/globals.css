@@ -623,3 +623,16 @@ a { color:inherit; text-decoration:none; }
 .checkout-zones .checkout-zone strong { grid-column:2; color:var(--accent); font-size:16px; font-weight:500; }
 .checkout-zones .checkout-zone[data-selected="true"] { border-color:#111; box-shadow:inset 0 0 0 1px #111; background:#f6f5f2; }
 .checkout-zones .checkout-zone:focus-within { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* Voucher box on the checkout page. Written with the summary prefix so it beats the big Pay button rule. */
+.checkout-summary .checkout-voucher { margin:22px 0 4px; }
+.checkout-summary .checkout-voucher button { display:inline-flex; width:auto; min-height:0; margin:0; padding:0; border:0; background:none; color:var(--accent); text-transform:none; letter-spacing:normal; font-size:13px; text-align:left; text-decoration:underline; text-underline-offset:4px; }
+.checkout-summary .checkout-voucher button:hover:not(:disabled) { background:none; color:#111; }
+.checkout-summary .checkout-voucher-form label { display:block; margin-bottom:8px; color:#333; font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
+.checkout-summary .checkout-voucher-form > div { display:flex; gap:8px; align-items:stretch; }
+.checkout-summary .checkout-voucher-form input { flex:1 1 auto; width:auto; min-width:0; min-height:46px; padding:10px 12px; border:1px solid #bdbab7; border-radius:0; background:#fff; font-size:16px; letter-spacing:.06em; text-transform:uppercase; }
+.checkout-summary .checkout-voucher-form > div > button { flex:none; justify-content:center; min-height:46px; padding:0 18px; border:1px solid #111; background:#111; color:#fff; text-transform:uppercase; letter-spacing:.12em; font-size:11px; text-decoration:none; }
+.checkout-summary .checkout-voucher-form > div > button:hover:not(:disabled) { background:#fff; color:#111; }
+.checkout-summary .checkout-voucher-form button:disabled { opacity:.5; cursor:not-allowed; }
+.checkout-summary .checkout-voucher-applied { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0; padding:12px 14px; background:#eef5ef; border-left:3px solid #2f6b3f; color:#1f4a2b; font-size:13px; }
+.checkout-summary .checkout-voucher-applied button { color:#1f4a2b; font-size:12px; }

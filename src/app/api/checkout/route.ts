@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 // Every new checkout holds stock for 30 minutes, so starting them is limited.
 const perContact = createRateLimiter({ limit: 5, windowMs: 10 * 60_000 });
 const perCaller = createRateLimiter({ limit: 12, windowMs: 10 * 60_000 });
+// Trying vouchers at checkout counts against the same brake as the voucher check page.
+const perCallerVoucher = createRateLimiter({ limit: 20, windowMs: 10 * 60_000 });
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +18,10 @@ export async function POST(request: Request) {
     const caller = perCaller.check(clientAddress(request));
     if (!caller.ok) return rateLimited(caller.retryAfterSeconds);
     const input = parseCheckoutInput(await readJson(request));
+    if (input.voucherCode) {
+      const voucherTry = perCallerVoucher.check(clientAddress(request));
+      if (!voucherTry.ok) return rateLimited(voucherTry.retryAfterSeconds);
+    }
     const contact = perContact.check(input.email);
     if (!contact.ok) return rateLimited(contact.retryAfterSeconds);
     const { order, created } = await reserveOrder(input, config);

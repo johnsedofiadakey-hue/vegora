@@ -8,6 +8,7 @@ import { adminAuth } from "@/lib/admin-client";
 import { autoSku } from "./product-assets-editor";
 import { ContentEditor } from "./content-editor";
 import { SignupsPanel } from "./signups-panel";
+import { VouchersPanel } from "./vouchers-panel";
 import { StudioNav, type StudioView } from "./studio-nav";
 import { ProductEditor, ProductGrid } from "./products-view";
 import { OrdersView, needsDelivery, type AdminOrder } from "./orders-view";
@@ -35,6 +36,7 @@ export default function AdminPage() {
   // Mounted on first visit and then kept, so unsaved content edits survive switching tabs.
   const [contentVisited, setContentVisited] = useState(false);
   const [signupsVisited, setSignupsVisited] = useState(false);
+  const [vouchersVisited, setVouchersVisited] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [orderEvents, setOrderEvents] = useState<FulfillmentEvent[]>([]);
   const [editing, setEditing] = useState<ProductInput>({ ...emptyProduct });
@@ -230,6 +232,7 @@ export default function AdminPage() {
   const selectView = useCallback((next: StudioView) => {
     if (next === "content") setContentVisited(true);
     if (next === "signups") setSignupsVisited(true);
+    if (next === "vouchers") setVouchersVisited(true);
     setView(next); setMessage(""); window.scrollTo({ top: 0 });
   }, []);
 
@@ -251,6 +254,7 @@ export default function AdminPage() {
         onRefresh={() => void loadOrders()} onSaveFulfillment={saveFulfillment} />}
       {contentVisited && <div hidden={view !== "content"}><ContentEditor adminFetch={adminFetch} /></div>}
       {signupsVisited && <div hidden={view !== "signups"}><SignupsPanel adminFetch={adminFetch} /></div>}
+      {vouchersVisited && <div hidden={view !== "vouchers"}><VouchersPanel adminFetch={adminFetch} /></div>}
     </div>
   </main>;
 }

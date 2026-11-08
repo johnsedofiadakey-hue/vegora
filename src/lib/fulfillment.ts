@@ -234,6 +234,7 @@ export function publicTrackingView(order: {
   fulfillment?: Fulfillment;
   lines?: { name: string; size: string; quantity: number; lineTotalMinor: number }[];
   subtotalMinor?: number;
+  discountMinor?: number;
   deliveryFeeMinor?: number;
   totalMinor?: number;
   delivery?: { zoneLabel?: string };
@@ -261,6 +262,8 @@ export function publicTrackingView(order: {
     deliveryArea: order.delivery?.zoneLabel ?? null,
     items,
     subtotalMinor: order.subtotalMinor ?? null,
+    // What a voucher took off. The voucher code itself is never shown on this page.
+    discountMinor: order.discountMinor ?? 0,
     deliveryFeeMinor: order.deliveryFeeMinor ?? null,
     totalMinor: order.totalMinor ?? null,
   };

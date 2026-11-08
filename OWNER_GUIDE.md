@@ -110,6 +110,23 @@ Customers follow their order on the **Track order** page (link in the footer) wi
 - **Plain English.** The home page, product, cart, checkout, order tracking and footer wording was rewritten in short, simple words. The page called "The Edit" is now **Our Style**, and "New In" is **New Clothes**. If you had already published your own wording for the Homepage, Our Style or About sections in the Content tab, those texts stay as you wrote them; open each section and change them if you want them simpler too.
 - **Your phone is how customers are found.** Customers look up an order with the order number and their phone number. In the Orders tab, the customer's phone number is shown (tap it to call), and you can search by phone number.
 
+## Vouchers (discount codes)
+
+Open **Vouchers** in the menu. Vouchers are **off until you switch them on**.
+
+1. **Settings.** Tick the switch to turn vouchers on or off for the whole shop. Set the **highest percentage allowed**. It is a safety limit: you cannot make a voucher above it, and any voucher already above it stops working.
+2. **Make vouchers.** Write a private note (for example "Ama, Instagram giveaway"), choose the percentage, how many numbers to make, how many times each can be used, and the last day. You can also set a first day, the smallest order allowed, and the most a voucher can take off. The system makes the numbers (like `7K2M-9QXA-4BCD`). You cannot pick your own, so nobody can guess them.
+3. **Give each number to one customer.** Use **Copy** to paste it into WhatsApp or a message.
+4. **The customer** types the number in the "Have a voucher?" box on the checkout page. The percentage comes off the clothes (never the delivery) and they see the new total before paying.
+5. **Your list** shows each voucher: how many times it was used, how many are waiting for payment, and its last day. You can **turn off**, **change the last day**, or **delete** (only if it was never used). The percentage can never be changed: turn it off and make a new one.
+
+Rules that protect you:
+- One voucher per order. The discount never touches delivery.
+- If a payment fails or the checkout times out, the use is given back automatically.
+- "Times per phone number" stops one number using it twice, but a person can use a different phone number. For vouchers you hand out one by one, keep **1 use each** (the default) and a short last day.
+- Every voucher action is logged for your developer.
+- Never post a voucher number publicly unless you mean it for everyone. If one leaks, turn it off.
+
 ## Before checkout can open
 
 These need your decisions. Your developer will do the technical side:

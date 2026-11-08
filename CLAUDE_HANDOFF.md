@@ -1,5 +1,9 @@
 # VEGORA handoff for Claude
 
+## Update (8 November 2026): vouchers
+
+Percentage-off vouchers with strict rules, managed in the admin sidebar item **Vouchers**. Plan, decisions and checklist: `PLAN_VOUCHERS.md`. Contract and rules: `ADMIN_SETUP.md` ("Vouchers"). Server-made 60-bit codes, immutable percentage, hard ceiling 50% plus an admin ceiling (default 30%), off by default, uses reserved with the stock and released on every failure path, uniform "cannot be used" message, rate limits, audit trail. Tested end to end against the emulators with a local Paystack test double. **The first live order with a voucher still needs a manual check** (Paystack amount equals the discounted total).
+
 ## Update (2 November 2026, later): simple checkout, phone-based tracking, cart wording
 
 Decisions by the owner: **no email collected**, checkout asks only full name, phone number, delivery area (Accra GH₵30 / Tema GH₵50 radio choice) and one address box; the website uses simple English; "bag" became **cart** (`/cart`, `/bag` redirects in `next.config.ts`; internal names such as `bag-store` and `.bag-*` CSS were left alone). Tracking now uses order number + **phone number** (`src/lib/contact.ts`: last nine digits compared; emails still match older orders). Paystack gets a placeholder email built from the phone number. Content defaults in `src/lib/site-content.ts` were rewritten in plain words, but anything already **published** in the CMS overrides them. "The Edit" became "Our Style" and "New In" became "New Clothes" in the navigation and page titles. Contracts in `ADMIN_SETUP.md`.

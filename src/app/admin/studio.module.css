@@ -160,3 +160,12 @@
 @media(prefers-reduced-motion:reduce){.sidebar,.scrim,.cardImage img{transition:none}}
 
 .orderSearch{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:0 14px;border:1px solid #c9c9c6;background:#fff}.orderSearch svg{flex:none;color:#777}.orderSearch input{flex:1;min-width:0;min-height:46px;border:0;background:transparent;font-size:14px;outline:0}.orderSearch:focus-within{border-color:#111}
+
+/* Vouchers */
+.vSwitch{display:flex;align-items:flex-start;gap:12px;margin:0 0 18px;cursor:pointer}.vSwitch input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}.vSwitch span{display:grid;gap:2px}.vSwitch small,.vField small{color:var(--muted);font-size:12px;font-weight:400;line-height:1.5}
+.vField{display:grid;gap:6px;margin:0 0 16px;font-size:13px;font-weight:600}.vField input,.vField select{min-height:46px;padding:10px 12px;border:1px solid #c9c7c2;border-radius:10px;background:#fff;width:100%;max-width:420px}.vField input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.vGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0 22px}.vGrid .vField input{max-width:none}
+.vCodes{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}.vCodes li{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.vCodes code,.vTop code{font:600 16px ui-monospace,Menlo,monospace;letter-spacing:.06em;background:var(--soft);padding:8px 12px;border-radius:8px}
+.vList{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--line)}.vList li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}.vMain{display:grid;gap:6px;min-width:0}.vMain small{color:var(--muted);line-height:1.5}.vTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.vCopy{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.vActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.vActions .secondary,.vActions .primary,.vActions .danger{min-height:38px;padding:0 14px;font-size:12px}
+@media(max-width:700px){.vList li{grid-template-columns:1fr}.vActions{justify-content:flex-start}}

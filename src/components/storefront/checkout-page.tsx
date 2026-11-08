@@ -17,6 +17,13 @@ export function CheckoutPage() {
   const [available, setAvailable] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // Vouchers: the browser only keeps the code the customer typed. The server works out the discount again when the order is made.
+  const [vouchersOn, setVouchersOn] = useState(false);
+  const [voucherOpen, setVoucherOpen] = useState(false);
+  const [voucherInput, setVoucherInput] = useState("");
+  const [voucherChecking, setVoucherChecking] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+  const [voucher, setVoucher] = useState<{ code: string; percentOff: number; discountMinor: number } | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setItems(readBag()), 0);
@@ -24,9 +31,10 @@ export function CheckoutPage() {
     fetch("/api/checkout/zones", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
-        const data = await response.json() as { zones?: Zone[] };
+        const data = await response.json() as { zones?: Zone[]; vouchers?: boolean };
         if (!Array.isArray(data.zones) || !data.zones.length) return;
         setZones(data.zones);
+        setVouchersOn(data.vouchers === true);
         // Never pick an area for the customer when there is a choice: the delivery
         // price depends on it, and a quiet default could be paid for by mistake.
         if (data.zones.length === 1) setZoneId(data.zones[0].id);
@@ -40,6 +48,7 @@ export function CheckoutPage() {
   const zone = zones.find((entry) => entry.id === zoneId);
   const subtotal = items.reduce((sum, item) => sum + item.priceMinor * item.quantity, 0);
   const delivery = zone ? zone.feeMinor : null;
+  const discount = voucher ? voucher.discountMinor : 0;
   const supportedBag = items.every((item) => item.currency === "GHS" && item.quantity <= 10);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -54,6 +63,7 @@ export function CheckoutPage() {
       delivery: { zoneId: zone.id, addressLine1: String(form.get("addressLine1") || "") },
       items: items.map(({ slug, variantId, quantity }) => ({ slug, variantId, quantity })),
       idempotencyKey: window.crypto.randomUUID(),
+      ...(voucher ? { voucherCode: voucher.code } : {}),
     };
     try {
       const response = await fetch("/api/checkout", {
@@ -77,6 +87,24 @@ export function CheckoutPage() {
     }
   }
 
+  async function applyVoucher() {
+    const code = voucherInput.trim();
+    if (!code || voucherChecking) return;
+    setVoucherChecking(true); setVoucherError("");
+    try {
+      const response = await fetch("/api/voucher/check", {
+        method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store",
+        body: JSON.stringify({ code, items: items.map(({ slug, variantId, quantity }) => ({ slug, variantId, quantity })) }),
+      });
+      const result = await response.json() as { percentOff?: number; discountMinor?: number; error?: string };
+      if (!response.ok || !result.percentOff || !result.discountMinor) throw new Error(result.error || "This voucher cannot be used. Check the code and try again.");
+      setVoucher({ code, percentOff: result.percentOff, discountMinor: result.discountMinor });
+      setVoucherOpen(false); setVoucherInput("");
+    } catch (cause) {
+      setVoucherError(cause instanceof Error ? cause.message : "We could not check your voucher. Please try again.");
+    } finally { setVoucherChecking(false); }
+  }
+
   return <div className="checkout-page section-pad">
     <Link className="checkout-back" href="/cart"><ArrowLeft size={15} /> Back to cart</Link>
     <span className="eyebrow">VEGORA / CHECKOUT</span>
@@ -98,7 +126,17 @@ export function CheckoutPage() {
         </form>
         <aside className="checkout-summary"><span className="eyebrow">YOUR ORDER</span><h2>Summary</h2>
           <div className="checkout-lines">{items.map((item) => <div key={item.key}><span>{item.name}<small>Size {item.size} · Qty {item.quantity}</small></span><strong>{formatMoney(item.priceMinor * item.quantity)}</strong></div>)}</div>
-          <div className="checkout-totals"><div><span>Clothes</span><strong>{formatMoney(subtotal)}</strong></div><div><span>Delivery</span><strong>{delivery === null ? "Choose an area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total so far" : "Total"}</span><strong>{formatMoney(subtotal + (delivery ?? 0))}</strong></div></div>
+          {vouchersOn && <div className="checkout-voucher">
+            {voucher ? <p className="checkout-voucher-applied"><span>Voucher used · {voucher.percentOff}% off</span><button type="button" onClick={() => setVoucher(null)}>Remove</button></p>
+              : voucherOpen ? <div className="checkout-voucher-form">
+                <label htmlFor="voucher-code">Voucher number</label>
+                <div><input id="voucher-code" value={voucherInput} onChange={(event) => setVoucherInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void applyVoucher(); } }} placeholder="XXXX-XXXX-XXXX" maxLength={40} autoCapitalize="characters" autoComplete="off" spellCheck={false} />
+                  <button type="button" onClick={() => void applyVoucher()} disabled={voucherChecking || !voucherInput.trim()}>{voucherChecking ? "Checking…" : "Use"}</button></div>
+                {voucherError && <p className="checkout-error" role="alert">{voucherError}</p>}
+              </div>
+                : <button type="button" className="checkout-voucher-toggle" onClick={() => setVoucherOpen(true)}>Have a voucher?</button>}
+          </div>}
+          <div className="checkout-totals"><div><span>Clothes</span><strong>{formatMoney(subtotal)}</strong></div>{voucher && <div><span>Voucher</span><strong>−{formatMoney(discount)}</strong></div>}<div><span>Delivery</span><strong>{delivery === null ? "Choose an area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total so far" : "Total"}</span><strong>{formatMoney(subtotal - discount + (delivery ?? 0))}</strong></div></div>
           <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? "Opening Paystack…" : "Pay with Paystack"} <ArrowUpRight size={16} /></button>
           {!supportedBag && <p className="checkout-error">Something in your cart needs fixing. Please go back to your cart.</p>}
           <p className="checkout-summary-note">We check the prices and stock again before you pay.</p>
