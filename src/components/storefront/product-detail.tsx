@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { addToBag } from "./bag-store";
+import { cedis, trackPixel } from "@/lib/meta-pixel";
 import { WishlistButton } from "./wishlist-button";
 import { Product, formatMoney } from "./catalog-types";
 import { findPreviewProduct, previewPriceMinor } from "@/lib/preview-products";
@@ -43,7 +44,10 @@ export function ProductDetail({ slug }: { slug: string }) {
     const preview = previewRecord(slug);
     fetch(`/api/products/${encodeURIComponent(slug)}`, { signal: controller.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Product unavailable"); return response.json() as Promise<{ product: Product }>; })
-      .then(({ product }) => { setProduct(product); setIsPreview(false); setState("ready"); })
+      .then(({ product }) => {
+        setProduct(product); setIsPreview(false); setState("ready");
+        trackPixel("ViewContent", { content_ids: [product.slug], content_name: product.name, content_type: "product", ...(product.priceMinor !== null ? { value: cedis(product.priceMinor), currency: product.currency } : {}) });
+      })
       .catch((error: unknown) => { if ((error as Error).name !== "AbortError" && !preview) setState("missing"); });
     return () => controller.abort();
   }, [slug]);

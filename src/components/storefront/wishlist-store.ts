@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { trackPixel } from "@/lib/meta-pixel";
 
 // Saved pieces live in this browser only (no account), like the cart. Only the
 // product slugs are kept; the wishlist page loads the current name, price and
@@ -38,7 +39,9 @@ function writeWishlist(slugs: string[]) {
 /** Saves the piece if it is not saved yet, otherwise removes it. Newest first. */
 export function toggleWishlist(slug: string) {
   const slugs = readWishlist();
-  writeWishlist(slugs.includes(slug) ? slugs.filter((item) => item !== slug) : [slug, ...slugs]);
+  const saved = slugs.includes(slug);
+  writeWishlist(saved ? slugs.filter((item) => item !== slug) : [slug, ...slugs]);
+  if (!saved) trackPixel("AddToWishlist", { content_ids: [slug], content_type: "product" });
 }
 
 export function removeFromWishlist(slug: string) {

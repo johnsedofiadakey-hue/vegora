@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { type BagItem, readBag } from "./bag-store";
 import { formatMoney } from "./catalog-types";
+import { cedis, trackPixel } from "@/lib/meta-pixel";
 
 type Zone = { id: string; label: string; region: string; cities: string[] | null; feeMinor: number };
 type CheckoutResult = { authorizationUrl?: string; reference?: string; error?: string };
@@ -26,7 +27,12 @@ export function CheckoutPage() {
   const [voucher, setVoucher] = useState<{ code: string; percentOff: number; discountMinor: number } | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setItems(readBag()), 0);
+    const timer = window.setTimeout(() => {
+      const bag = readBag();
+      setItems(bag);
+      if (bag.length) trackPixel("InitiateCheckout", { content_ids: bag.map((item) => item.slug), content_type: "product",
+        num_items: bag.reduce((sum, item) => sum + item.quantity, 0), value: cedis(bag.reduce((sum, item) => sum + item.priceMinor * item.quantity, 0)), currency: "GHS" });
+    }, 0);
     const controller = new AbortController();
     fetch("/api/checkout/zones", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
@@ -79,6 +85,9 @@ export function CheckoutPage() {
       if (result.reference && /^VG-[0-9a-f]{32}$/.test(result.reference)) {
         window.sessionStorage.setItem(`vegora-checkout-v1:${result.reference}`, JSON.stringify(items.map(({ key, quantity }) => ({ key, quantity }))));
         window.sessionStorage.setItem(`vegora-checkout-contact:${result.reference}`, phone);
+        // What the Pixel reports as the purchase once Paystack confirms payment.
+        window.sessionStorage.setItem(`vegora-checkout-pixel:${result.reference}`, JSON.stringify({
+          value: subtotal - discount + (delivery ?? 0), ids: items.map((item) => item.slug), count: items.reduce((sum, item) => sum + item.quantity, 0) }));
       }
       window.location.assign(destination.toString());
     } catch (cause) {

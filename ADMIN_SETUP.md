@@ -80,6 +80,10 @@ Plan and decisions: `PLAN_VOUCHERS.md`. Rules are pure and shared in `src/lib/vo
 - **Known limit:** "per phone number" can be dodged with another number. Single-use codes and expiry dates are the real protection for a code that gets shared.
 - **Not covered by the local emulator run:** a real Paystack payment. The end-to-end test (`e2e-vouchers.py`, kept in the session scratchpad, not the repo) used a local Paystack test double. The first live order with a voucher should be checked by hand: the Paystack amount must equal the discounted total.
 
+## Meta Pixel
+
+`NEXT_PUBLIC_META_PIXEL_ID` (set in `apphosting.yaml`, BUILD and RUNTIME; it is public) turns on the Meta Pixel for shop pages only (`src/components/storefront/meta-pixel.tsx` in the shop layout, never the admin). It sends `PageView` on every page and on each in-app page change, plus `ViewContent` (product page), `AddToCart` (product page or card), `AddToWishlist`, `InitiateCheckout` (checkout opened with a cart) and `Purchase` (once, on the confirmation page after Paystack reports `paid`, with the total shown at checkout and the order reference as `eventID`). Values are in GHS cedis. No name, phone, address or email is sent. Events raised before the script runs wait in `window.__vegoraPixelQueue` and are flushed by the base code. On product pages Meta sends events as a form POST (the page's Product JSON-LD makes them too large for an image request), so they do not show as `facebook.com/tr` images in DevTools. Leave the variable empty to switch the pixel off.
+
 ## Checkout gate
 
 For local key setup, copy `.env.example` to `.env.local`, paste only the Paystack **Test Secret Key** into `PAYSTACK_SECRET_KEY=`, then run `npm run check:paystack`. The check contacts Paystack and reports acceptance without printing the key. The hosted checkout does not need a browser public key. `.env.local` is Git-ignored. Keep checkout switches unset while delivery rules and the public test webhook are being prepared.

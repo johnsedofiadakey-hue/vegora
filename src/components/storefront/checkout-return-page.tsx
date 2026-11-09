@@ -7,6 +7,21 @@ import { readBag, writeBag } from "./bag-store";
 import { shortOrderCode } from "@/lib/fulfillment";
 import { addSavedOrder, parseSavedOrders, removeSavedOrder, savedOrdersKey } from "@/lib/saved-orders";
 import { OrderNumberCard } from "./order-number-card";
+import { cedis, trackPixel } from "@/lib/meta-pixel";
+
+// Tell the Meta Pixel about a paid order once, using the total the customer
+// saw at checkout on this device. Reloading this page does not count it again.
+function reportPurchase(reference: string) {
+  try {
+    const key = `vegora-checkout-pixel:${reference}`;
+    const stored = JSON.parse(window.sessionStorage.getItem(key) || "null") as { value?: unknown; ids?: unknown; count?: unknown } | null;
+    if (!stored || typeof stored.value !== "number") return;
+    trackPixel("Purchase", { value: cedis(stored.value), currency: "GHS", content_type: "product",
+      content_ids: Array.isArray(stored.ids) ? stored.ids.filter((id) => typeof id === "string") : [],
+      num_items: typeof stored.count === "number" ? stored.count : undefined }, reference);
+    window.sessionStorage.removeItem(key);
+  } catch { /* tracking is optional */ }
+}
 
 type OrderStatus = "initializing" | "pending_payment" | "paid" | "failed" | "expired" | "review_required";
 
@@ -41,6 +56,7 @@ export function CheckoutReturnPage() {
         setStatus(data.status);
         if (data.status === "paid") {
           clearPaidSelection(ref);
+          reportPurchase(ref);
           try { window.sessionStorage.setItem("vegora-last-order-reference", ref); } catch { /* Manual entry remains available. */ }
           // The phone number was typed at checkout on this device; keep it with the order number so
           // Track order can open the order in one tap. It stays in this browser only.

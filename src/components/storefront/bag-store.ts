@@ -1,4 +1,5 @@
 import type { Product, ProductVariant } from "./catalog-types";
+import { cedis, trackPixel } from "@/lib/meta-pixel";
 
 export type BagItem = {
   key: string;
@@ -40,4 +41,5 @@ export function addToBag(product: Product, variant: ProductVariant, quantity: nu
   if (existing) existing.quantity = Math.min(variant.stock, existing.quantity + quantity);
   else items.push({ key, productId: product.id, slug: product.slug, name: product.name, image: product.images[0]?.url, imageAlt: product.images[0]?.alt, variantId: variant.id, size: variant.size, priceMinor: product.priceMinor, currency: product.currency, quantity: Math.min(variant.stock, quantity) });
   writeBag(items);
+  trackPixel("AddToCart", { content_ids: [product.slug], content_name: product.name, content_type: "product", value: cedis(product.priceMinor * quantity), currency: product.currency });
 }
