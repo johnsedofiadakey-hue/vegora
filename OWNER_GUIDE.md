@@ -20,6 +20,19 @@ Everything is done in the **Studio admin** at the website address followed by `/
 2. When you are finished on a shared computer, choose **Sign out** at the top right.
 3. Never share your password. If someone else needs access, ask your developer to give them their own account.
 
+## Insights (the first screen after signing in)
+
+**Insights** shows how the shop is selling. Pick **Today**, **Last 7 days**, **Last 30 days** or **This month**.
+
+- **Sales**: what customers paid for paid orders, including delivery fees and after voucher discounts. Under it you see the change against the period before (for example "+20% vs yesterday").
+- **Paid orders**, **Average order** and **Pieces sold**.
+- A line saying how much of the sales was delivery fees, how much vouchers took off, how many checkouts were started but never paid, and whether any order needs a check in **Orders**.
+- **Best sellers**, **Sizes sold** and **Delivery areas** for that period.
+
+Only paid orders count. An order counts on the day its payment was confirmed. Press **Refresh** to load new orders.
+
+Visitors (how many people came, from where, on which pages) and adverts are not in the admin. Use the **Google Analytics** and **Meta Events Manager** buttons at the bottom of Insights, and sign in with the account that owns each one.
+
 ## Products
 
 **Draft or published.** A *draft* is private, so customers cannot see it. A *published* product appears on the site, but only if it has a **price, at least one photo, and at least one size with stock above zero**. This is deliberate: nothing half-finished can go live.

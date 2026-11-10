@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { ArrowUpRight, FileText, LogOut, Mail, Menu, Package, ShoppingBag, Ticket, X } from "lucide-react";
+import { ArrowUpRight, ChartNoAxesColumn, FileText, LogOut, Mail, Menu, Package, ShoppingBag, Ticket, X } from "lucide-react";
 import styles from "./studio.module.css";
 
-export type StudioView = "products" | "orders" | "content" | "signups" | "vouchers";
+export type StudioView = "insights" | "products" | "orders" | "content" | "signups" | "vouchers";
 
 const items: { view: StudioView; label: string; icon: typeof Package }[] = [
+  { view: "insights", label: "Insights", icon: ChartNoAxesColumn },
   { view: "products", label: "Products", icon: Package },
   { view: "orders", label: "Orders", icon: ShoppingBag },
   { view: "content", label: "Website text", icon: FileText },

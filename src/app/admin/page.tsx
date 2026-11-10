@@ -9,6 +9,7 @@ import { autoSku } from "./product-assets-editor";
 import { ContentEditor } from "./content-editor";
 import { SignupsPanel } from "./signups-panel";
 import { VouchersPanel } from "./vouchers-panel";
+import { InsightsPanel } from "./insights-panel";
 import { StudioNav, type StudioView } from "./studio-nav";
 import { ProductEditor, ProductGrid } from "./products-view";
 import { OrdersView, needsDelivery, type AdminOrder } from "./orders-view";
@@ -29,7 +30,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [view, setView] = useState<StudioView>("products");
+  const [ordersTruncated, setOrdersTruncated] = useState(false);
+  const [view, setView] = useState<StudioView>("insights");
   const [menuOpen, setMenuOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
   const [orderDetailOpen, setOrderDetailOpen] = useState(false);
@@ -84,6 +86,7 @@ export default function AdminPage() {
     try {
       const result = await adminFetch("/api/admin/orders");
       setOrders(result.orders);
+      setOrdersTruncated(Boolean(result.truncated));
       if (result.truncated) setMessage("Showing the latest 200 orders. Older orders are not listed here yet.");
       const reference = selectedOrder && result.orders.some((order: AdminOrder) => order.reference === selectedOrder)
         ? selectedOrder : result.orders[0]?.reference;
@@ -244,6 +247,7 @@ export default function AdminPage() {
     <StudioNav view={view} onSelect={selectView} open={menuOpen} onOpenChange={setMenuOpen}
       ordersToHandle={orders.filter(needsDelivery).length} email={user.email ?? ""} onSignOut={() => void signOut(auth)} />
     <div className={studio.main}>
+      {view === "insights" && <InsightsPanel orders={orders} truncated={ordersTruncated} busy={busy} onRefresh={() => void loadOrders()} />}
       {view === "products" && (productOpen
         ? <ProductEditor key={originalSlug ?? "new"} editing={editing} setEditing={setEditing} isNew={!originalSlug} message={message} busy={busy}
           onSave={saveProduct} onArchive={archive} onUpload={uploadImages} onBack={() => { setProductOpen(false); setMessage(""); }} />
