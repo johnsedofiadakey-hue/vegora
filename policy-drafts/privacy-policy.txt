@@ -18,7 +18,7 @@ When you track an order: the order number and email address you type in, which w
 
 When you browse: like any website, our servers receive technical information such as your IP address, browser type and the pages requested. We use it to keep the site working and to block abuse, for example too many attempts in a short time. The items in your bag are saved in your own browser so they are still there when you come back; they are not sent to us until you check out.
 
-We use the Meta Pixel, a tool from Meta (the company behind Facebook, Instagram and WhatsApp). When you visit our shop it tells Meta which pages and products you looked at, what you saved or added to your cart, and the value of an order you paid for. It never sends your name, phone number, address or payment details. Meta may link this to your Facebook or Instagram account and uses cookies to do so. We use it to measure our adverts and to show VEGORA adverts to people who may be interested. You can control this in your Facebook or Instagram ad settings, or by blocking cookies in your browser. Your wishlist and the items in your cart are saved in your own browser and are not sent to us until you check out.
+We use the Meta Pixel, a tool from Meta (the company behind Facebook, Instagram and WhatsApp). When you visit our shop it tells Meta which pages and products you looked at, what you saved or added to your cart, and the value of an order you paid for. It never sends your name, phone number, address or payment details. Meta may link this to your Facebook or Instagram account and uses cookies to do so. We use it to measure our adverts and to show VEGORA adverts to people who may be interested. You can control this in your Facebook or Instagram ad settings, or by blocking cookies in your browser. We also use Google Analytics, a tool from Google, to count visits and see which pages and products are popular and how many visits end in an order. It records the same kind of information (pages, products, cart, order value), plus your rough location and the type of device and browser you use. It never sends your name, phone number, email, address or payment details. It uses cookies; you can block them in your browser or use Google's opt-out add-on at tools.google.com/dlpage/gaoptout. Your wishlist and the items in your cart are saved in your own browser and are not sent to us until you check out.
 
 3. Why we use your information
 
@@ -37,6 +37,8 @@ We share only what each party needs to do its job:
 Paystack, to process your payment.
 
 Meta Platforms, through the Meta Pixel described above, to measure and target our adverts.
+
+Google, through Google Analytics described above, to measure visits to our shop.
 
 Google Cloud (Firebase), which hosts our website and stores our order and sign-up records on our behalf.
 

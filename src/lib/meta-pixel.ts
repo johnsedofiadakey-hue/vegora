@@ -3,7 +3,9 @@
 // sent once it does. With no pixel ID configured these calls do nothing. Only
 // product and order amounts are sent, never a customer's name, phone or address.
 
-export const pixelId = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
+import { trackGoogle } from "./google-analytics";
+
+export const pixelId =(process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
 const pixelConfigured = /^[0-9]{10,20}$/.test(pixelId);
 
 type Fbq = (command: "track" | "trackCustom", event: string, params?: Record<string, unknown>, options?: { eventID?: string }) => void;
@@ -18,6 +20,8 @@ export type PixelEvent = "ViewContent" | "AddToCart" | "AddToWishlist" | "Initia
 export const pixelQueueName = "__vegoraPixelQueue";
 
 export function trackPixel(event: PixelEvent, params?: Record<string, unknown>, eventId?: string) {
+  // The same shop events also go to Google Analytics when it is configured.
+  trackGoogle(event, params, eventId);
   if (typeof window === "undefined" || !pixelConfigured) return;
   const args = ["track", event, params, eventId ? { eventID: eventId } : undefined] as const;
   const scope = window as unknown as { fbq?: Fbq } & Record<string, unknown>;

@@ -31,6 +31,12 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Google Analytics 4 for the shop pages. Public by design: it appears in every page.
+  - variable: NEXT_PUBLIC_GA_MEASUREMENT_ID
+    value: "G-R3LSFHQ89Y"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: VEGORA_SITE_URL
     value: https://www.shopvegora.com
     availability:
