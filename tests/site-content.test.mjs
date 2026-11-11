@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   blockIds, blocks, blockStatus, contactChannels, contactDisplay, contactHref, defaultValues, describeBlocks, discardDraft, editorValues,
   emptyBlockState, isBlockId, normalizeState, paragraphs, parseValues, policyIsLive, publishDraft,
-  publishedValues, resolveValues, restoreRevision, saveDraft, SiteContentError, socialLinks,
+  publishedValues, resolveValues, restoreRevision, saveDraft, SiteContentError, socialLinks, whatsappNumber,
 } from "../src/lib/site-content.ts";
 
 const t0 = "2026-10-31T10:00:00.000Z";
@@ -294,5 +294,12 @@ test("privacy and terms stay hidden until they have text, like delivery and retu
     assert.equal(parseValues(id, { body: "x".repeat(12000) }).body.length, 12000);
     rejects(() => parseValues(id, { body: "x".repeat(12001) }));
     rejects(() => parseValues(id, { body: "<script>alert(1)</script>" }));
+  }
+});
+
+test("WhatsApp links use the full international number, however it was typed", () => {
+  for (const typed of ["0246582579", "024 658 2579", "+233 24 658 2579", "233246582579", "00233246582579", "246582579"]) {
+    assert.equal(whatsappNumber(typed), "233246582579", typed);
+    assert.equal(contactHref("whatsapp", typed), "https://wa.me/233246582579", typed);
   }
 });

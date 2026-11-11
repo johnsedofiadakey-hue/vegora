@@ -636,3 +636,14 @@ a { color:inherit; text-decoration:none; }
 .checkout-summary .checkout-voucher-form button:disabled { opacity:.5; cursor:not-allowed; }
 .checkout-summary .checkout-voucher-applied { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0; padding:12px 14px; background:#eef5ef; border-left:3px solid #2f6b3f; color:#1f4a2b; font-size:13px; }
 .checkout-summary .checkout-voucher-applied button { color:#1f4a2b; font-size:12px; }
+
+/* Floating WhatsApp button */
+.whatsapp-float { position:fixed; right:20px; bottom:20px; z-index:28; display:grid; place-items:center; width:58px; height:58px; border-radius:50%; background:#25d366; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.28); transition:transform .18s ease, box-shadow .18s ease; }
+.whatsapp-float:hover { transform:scale(1.07); box-shadow:0 8px 22px rgba(0,0,0,.34); }
+.whatsapp-float:focus-visible { outline:3px solid #111; outline-offset:3px; }
+@media (max-width:767px) {
+  .whatsapp-float { right:14px; bottom:calc(14px + env(safe-area-inset-bottom)); width:54px; height:54px; }
+  /* The product page has a buy bar pinned to the bottom, so the button sits above it. */
+  body:has(.mobile-buy-bar) .whatsapp-float { bottom:calc(92px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion:reduce) { .whatsapp-float { transition:none; } .whatsapp-float:hover { transform:none; } }

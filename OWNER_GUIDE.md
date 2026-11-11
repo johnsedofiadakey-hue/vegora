@@ -123,6 +123,10 @@ Customers follow their order on the **Track order** page (link in the footer) wi
 - **Plain English.** The home page, product, cart, checkout, order tracking and footer wording was rewritten in short, simple words. The page called "The Edit" is now **Our Style**, and "New In" is **New Clothes**. If you had already published your own wording for the Homepage, Our Style or About sections in the Content tab, those texts stay as you wrote them; open each section and change them if you want them simpler too.
 - **Your phone is how customers are found.** Customers look up an order with the order number and their phone number. In the Orders tab, the customer's phone number is shown (tap it to call), and you can search by phone number.
 
+## The green WhatsApp button
+
+A round green WhatsApp button floats in the bottom corner of every shop page. Tapping it opens WhatsApp with a short message ready to send ("Hello VEGORA, I have a question."). It uses the **WhatsApp number** from **Website text > Contact and footer**. If that field is empty the button is hidden. You can type the number the way people write it (0246 582 579 or +233 24 658 2579); the link adds Ghana's code by itself.
+
 ## Vouchers (discount codes)
 
 Open **Vouchers** in the menu. Vouchers are **off until you switch them on**.

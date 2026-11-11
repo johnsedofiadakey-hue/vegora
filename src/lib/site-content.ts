@@ -470,12 +470,24 @@ export function contactChannels(values: ContentValues): { kind: ContactKind; val
   return result;
 }
 
+/**
+ * WhatsApp wants the number in full international form with no plus and no leading zero.
+ * A Ghana number typed the way people write it (0246 582 579) becomes 233246582579.
+ */
+export function whatsappNumber(value: string): string {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  else if (digits.startsWith("0")) digits = `233${digits.slice(1)}`;
+  else if (digits.length === 9) digits = `233${digits}`;
+  return digits;
+}
+
 /** Link for a contact channel. Values were validated when saved, so they are safe to put in a link. */
 export function contactHref(kind: ContactKind, value: string): string {
   switch (kind) {
     case "email": return `mailto:${value}`;
     case "phone": return `tel:${value.replace(/[^+0-9]/g, "")}`;
-    case "whatsapp": return `https://wa.me/${value.replace(/\D/g, "")}`;
+    case "whatsapp": return `https://wa.me/${whatsappNumber(value)}`;
     default: return socialRules[kind].url(value);
   }
 }

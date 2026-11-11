@@ -1,5 +1,9 @@
 # VEGORA handoff for Claude
 
+## Update (11 November 2026): floating WhatsApp button
+
+`src/components/storefront/whatsapp-button.tsx` (rendered in the shop layout) draws a green fixed button from the CMS `contact.whatsapp` value; it is hidden when the field is empty. It sits above the mobile buy bar on product pages (CSS `:has(.mobile-buy-bar)`). Also fixed `contactHref("whatsapp")`: a Ghana number typed as `0246582579` produced a broken `wa.me/0246582579` link on the Contact page; `whatsappNumber()` in `src/lib/site-content.ts` now turns it into `233246582579` (tested).
+
 ## Update (8 November 2026): vouchers
 
 Percentage-off vouchers with strict rules, managed in the admin sidebar item **Vouchers**. Plan, decisions and checklist: `PLAN_VOUCHERS.md`. Contract and rules: `ADMIN_SETUP.md` ("Vouchers"). Server-made 60-bit codes, immutable percentage, hard ceiling 50% plus an admin ceiling (default 30%), off by default, uses reserved with the stock and released on every failure path, uniform "cannot be used" message, rate limits, audit trail. Tested end to end against the emulators with a local Paystack test double. **The first live order with a voucher still needs a manual check** (Paystack amount equals the discounted total).
