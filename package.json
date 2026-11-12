@@ -34,5 +34,14 @@
   },
   "overrides": {
     "@grpc/grpc-js": "^1.13.6"
-  }
+  },
+  "browserslist": [
+    "ios_saf >= 15.4",
+    "safari >= 15.4",
+    "chrome >= 100",
+    "edge >= 100",
+    "firefox >= 100",
+    "samsung >= 17",
+    "opera >= 86"
+  ]
 }
