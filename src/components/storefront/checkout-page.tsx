@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { type BagItem, readBag } from "./bag-store";
 import { formatMoney } from "./catalog-types";
 import { cedis, trackPixel } from "@/lib/meta-pixel";
+import { newCheckoutKey } from "@/lib/checkout-key";
 
 type Zone = { id: string; label: string; region: string; cities: string[] | null; feeMinor: number };
 type CheckoutResult = { authorizationUrl?: string; reference?: string; error?: string };
@@ -68,7 +69,7 @@ export function CheckoutPage() {
       customer: { name: String(form.get("name") || ""), phone },
       delivery: { zoneId: zone.id, addressLine1: String(form.get("addressLine1") || "") },
       items: items.map(({ slug, variantId, quantity }) => ({ slug, variantId, quantity })),
-      idempotencyKey: window.crypto.randomUUID(),
+      idempotencyKey: newCheckoutKey(window.crypto),
       ...(voucher ? { voucherCode: voucher.code } : {}),
     };
     try {
