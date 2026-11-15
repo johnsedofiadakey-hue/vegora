@@ -2,7 +2,7 @@
 
 A plain-language guide for the person who looks after the shop. You do not need to know anything about code.
 
-Everything is done in the **Studio admin** at the website address followed by `/admin`, that is `https://www.shopvegora.com/admin` (bookmark it: there is no link to it on the shop). Its menu has four sections: **Products**, **Orders**, **Website text** (called Content in older notes) and **Sign-ups**. On a computer the menu is down the left side; on a phone, tap the ☰ button at the top left.
+Everything is done in the **Studio admin** at the website address followed by `/admin`, that is `https://www.shopvegora.com/admin` (bookmark it: there is no link to it on the shop). Its menu has seven sections: **Insights**, **Products**, **Orders**, **Website text** (called Content in older notes), **Sign-ups**, **Vouchers** and **Delivery**. On a computer the menu is down the left side; on a phone, tap the ☰ button at the top left.
 
 **Getting a product ready to sell:** open **Products** and tap the product. Type the price, tap **+ S, M, L, XL** (or add other sizes), and enter how many of each size you have. The box at the top shows what is still missing; when everything is ticked, tap **Save and publish**. To take it off the shop again, tap **Hide from shop**. The stock code (SKU) is filled in automatically. Orders show a photo of each item, and the Orders menu item shows how many paid orders still need packing or delivery.
 
@@ -118,10 +118,37 @@ Customers follow their order on the **Track order** page (link in the footer) wi
 
 ## What customers see now (changed 2 November 2026)
 
-- **Checkout asks for four things only:** full name, phone number, delivery area (Accra or Tema, each shows its price) and one delivery address box. There is no email field. Customers pay with Paystack.
+- **Checkout asks for four things only:** full name, phone number, delivery area (each area shows its price, set in **Delivery**) and one delivery address box. There is no email field. Customers pay with Paystack.
 - **The cart.** The shop now says **cart** everywhere, not "bag" (Add to cart, Your cart). Old `/bag` links go to the cart by themselves.
 - **Plain English.** The home page, product, cart, checkout, order tracking and footer wording was rewritten in short, simple words. The page called "The Edit" is now **Our Style**, and "New In" is **New Clothes**. If you had already published your own wording for the Homepage, Our Style or About sections in the Content tab, those texts stay as you wrote them; open each section and change them if you want them simpler too.
 - **Your phone is how customers are found.** Customers look up an order with the order number and their phone number. In the Orders tab, the customer's phone number is shown (tap it to call), and you can search by phone number.
+
+## Delivery (areas and prices)
+
+Open **Delivery** in the menu. This is where you decide **where you deliver and what each place costs**. Customers see these areas, with their prices, at checkout.
+
+**Change a price**
+1. Open **Delivery**.
+2. Find the area, for example Accra, and type the new price in the **Price (GH₵)** box. Type it in cedis, for example `35` or `45.50`. Type `0` for free delivery.
+3. Press **Save delivery areas**. Wait for the green "Saved" message.
+
+**Add a new area**
+1. Press **Add an area**.
+2. Type the **Area name** (for example East Legon) and the **Price**. Leave **Region** as it is unless the place is outside Greater Accra.
+3. Press **Save delivery areas**.
+
+**Stop delivering to an area for a while:** switch its **On/Off** switch to **Off** and press **Save**. Customers can no longer choose it. Switch it back On when you are ready. You must always keep **at least one area On**, or customers cannot order.
+
+**Remove an area for good:** press **Remove** on its row, then **Save**.
+
+Things to know:
+- Nothing changes on the shop until you press **Save**.
+- A new price works for new orders straight away. **Orders already placed keep the price they were made with**, so customers are never charged a different amount from what they saw.
+- There is a safety limit of **GH₵500** per area, to stop a slipped decimal point (for example `3000` instead of `30`). Up to 20 areas.
+- Every change is recorded behind the scenes (who changed it, when, and the old and new prices).
+- The first time, the list shows your starting areas (Accra and Tema). Change anything and press Save, and from then on they are managed here.
+
+**Where the other notes live.** Words about delivery times, returns, privacy and terms are written in **Website text**, in the sections *Delivery information*, *Returns and exchanges*, *Privacy policy* and *Terms of sale*. Those four pages stay hidden until you publish text for them. Delivery progress for each order (Preparing, Dispatched, Delivered, with the rider and tracking reference, plus the private Internal note) is set inside **Orders**.
 
 ## The green WhatsApp button
 
@@ -148,7 +175,7 @@ Rules that protect you:
 
 These need your decisions. Your developer will do the technical side:
 
-1. **Delivery areas and prices:** which regions or cities you deliver to and what each costs. Nothing is assumed, and checkout cannot open without this.
+1. **Delivery areas and prices:** which places you deliver to and what each costs. You set these yourself in **Delivery**.
 2. **Real products:** names, prices, sizes and stock, and women's pieces and photos if you want a women's section.
 3. **Policy text:** delivery times, returns and exchanges, privacy, terms of sale, and your contact details.
 4. **Who answers customers** and how returns and refunds work, including tax.

@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChartNoAxesColumn, FileText, LogOut, Mail, Menu, Package, ShoppingBag, Ticket, X } from "lucide-react";
+import { ArrowUpRight, ChartNoAxesColumn, FileText, LogOut, Mail, Menu, Package, ShoppingBag, Ticket, Truck, X } from "lucide-react";
 import styles from "./studio.module.css";
 
-export type StudioView = "insights" | "products" | "orders" | "content" | "signups" | "vouchers";
+export type StudioView = "insights" | "products" | "orders" | "content" | "signups" | "vouchers" | "delivery";
 
 const items: { view: StudioView; label: string; icon: typeof Package }[] = [
   { view: "insights", label: "Insights", icon: ChartNoAxesColumn },
@@ -14,6 +14,7 @@ const items: { view: StudioView; label: string; icon: typeof Package }[] = [
   { view: "content", label: "Website text", icon: FileText },
   { view: "signups", label: "Sign-ups", icon: Mail },
   { view: "vouchers", label: "Vouchers", icon: Ticket },
+  { view: "delivery", label: "Delivery", icon: Truck },
 ];
 
 // Sidebar on desktop; on phones a top bar whose menu button slides the same list in.

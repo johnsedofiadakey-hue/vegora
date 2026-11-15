@@ -51,7 +51,7 @@ export function FulfillmentEditor({ order, busy, onSave }: {
     <label>Tracking reference<input value={trackingReference} onChange={(event) => setTrackingReference(event.target.value)} maxLength={100} minLength={3} pattern="[A-Za-z0-9._/-]{3,100}" disabled={!canEdit || busy} required={needsReference} placeholder="Enter the reference used for this delivery" /></label>
     <label>Internal note<textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={maxNoteLength} rows={3} disabled={!canEdit || busy} placeholder="Optional. Only the VEGORA team can see this." /></label>
     {movingBack && <p className={styles.fulfillmentWarning} role="status">This moves the order back a step. The customer&apos;s tracking page will drop the update you are undoing.</p>}
-    <p className={styles.fulfillmentHint}>Record the provider and reference before marking an order dispatched. A delivered order is final. Customers see delivery progress after entering their order ID and email; notes are never shown to them.</p>
+    <p className={styles.fulfillmentHint}>Record the provider and reference before marking an order dispatched. A delivered order is final. Customers see delivery progress after entering their order number and phone number; notes are never shown to them.</p>
     <button type="submit" disabled={!canEdit || busy || !changed}>{busy ? "Saving…" : "Save delivery update"}</button>
   </form>;
 }

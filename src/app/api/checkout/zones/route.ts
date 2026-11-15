@@ -1,4 +1,4 @@
-import { checkoutConfig } from "@/lib/server/checkout-config";
+import { loadCheckoutConfig } from "@/lib/server/delivery-settings";
 import { jsonError } from "@/lib/server/http";
 import { getVoucherSettings } from "@/lib/server/vouchers";
 
@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const zones = checkoutConfig().zones.map(({ id, label, region, cities, feeMinor }) => ({
+    const zones = (await loadCheckoutConfig()).zones.map(({ id, label, region, cities, feeMinor }) => ({
       id, label, region, cities: cities ?? null, feeMinor,
     }));
     // Whether to show the voucher box. If the setting cannot be read, vouchers stay hidden.

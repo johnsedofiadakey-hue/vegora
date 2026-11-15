@@ -197,3 +197,14 @@
 .insightLinks a{text-decoration:none}
 @media(max-width:1280px){.statGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.statGrid .statMain{grid-column:1/-1}}
 @media(max-width:640px){.statGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statGrid dd{font-size:24px}.statGrid .statMain dd{font-size:32px}.statGrid>div:last-child{grid-column:1/-1}}
+
+.dRows{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:14px}
+.dRows li{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.3fr);gap:0 18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff;align-items:start}
+.dRows li .vField input{max-width:none}
+.dRows li.dOff{background:#f4f3f0}
+.dActions{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dActions .vSwitch{margin:0}
+.dActions .secondary{min-height:38px;padding:0 14px;font-size:12px;display:inline-flex;align-items:center;gap:6px}
+.dButtons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 12px}
+.dButtons .secondary{display:inline-flex;align-items:center;gap:6px}
+@media(max-width:700px){.dRows li{grid-template-columns:1fr}}

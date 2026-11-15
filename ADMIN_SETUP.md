@@ -80,6 +80,16 @@ Plan and decisions: `PLAN_VOUCHERS.md`. Rules are pure and shared in `src/lib/vo
 - **Known limit:** "per phone number" can be dodged with another number. Single-use codes and expiry dates are the real protection for a code that gets shared.
 - **Not covered by the local emulator run:** a real Paystack payment. The end-to-end test (`e2e-vouchers.py`, kept in the session scratchpad, not the repo) used a local Paystack test double. The first live order with a voucher should be checked by hand: the Paystack amount must equal the discounted total.
 
+## Delivery areas (admin-managed)
+
+Delivery areas and fees are edited in the admin sidebar item **Delivery**. Added 15 November 2026.
+
+- **Storage:** Firestore `settings/delivery` holds `{ areas: [{ id, label, region, feeMinor, active }], updatedAt, updatedBy }`. Every save also writes an audit record to `deliveryEvents` (`before`, `after`, `actor`, `at`).
+- **Fallback:** until the admin saves for the first time, the areas come from `VEGORA_DELIVERY_ZONES_JSON`, so checkout never opens or breaks by itself. After the first save the stored list wins. A malformed stored list is ignored and the server setting is used. The environment variable can stay as the starting list.
+- **Rules (`src/lib/delivery.ts`, tested in `tests/delivery.test.mjs`):** 1 to 20 areas; name 1 to 40 characters, no control characters or `<>`, unique ignoring case; fee a whole number of pesewas from 0 (free) to 50,000 (GH₵500); at least one area active. The **id is made by the server** from the name (`East Legon` becomes `east-legon`) and never typed or changed by the admin; a save may only reuse ids that are live now, so an id cannot be invented.
+- **API:** `GET /api/admin/delivery` returns `{ areas, source: "admin" | "server", updatedAt }`. `PUT /api/admin/delivery { areas }` replaces the list (20 saves per minute per admin). Both need an admin sign-in (401 and 403 otherwise).
+- **Checkout:** `loadCheckoutConfig()` (`src/lib/server/delivery-settings.ts`) returns only areas that are on. `GET /api/checkout/zones` uses a 10 second cache; `POST /api/checkout` reads fresh. The order stores the area label and fee it was made with, and Paystack is asked for that exact total, so a later price change never alters an existing order. Turned-off and removed areas are refused with "Please choose one of the delivery areas shown".
+
 ## Meta Pixel
 
 `NEXT_PUBLIC_META_PIXEL_ID` (set in `apphosting.yaml`, BUILD and RUNTIME; it is public) turns on the Meta Pixel for shop pages only (`src/components/storefront/meta-pixel.tsx` in the shop layout, never the admin). It sends `PageView` on every page and on each in-app page change, plus `ViewContent` (product page), `AddToCart` (product page or card), `AddToWishlist`, `InitiateCheckout` (checkout opened with a cart) and `Purchase` (once, on the confirmation page after Paystack reports `paid`, with the total shown at checkout and the order reference as `eventID`). Values are in GHS cedis. No name, phone, address or email is sent. Events raised before the script runs wait in `window.__vegoraPixelQueue` and are flushed by the base code. On product pages Meta sends events as a form POST (the page's Product JSON-LD makes them too large for an image request), so they do not show as `facebook.com/tr` images in DevTools. Leave the variable empty to switch the pixel off.

@@ -1,4 +1,4 @@
-import { checkoutConfig } from "@/lib/server/checkout-config";
+import { loadCheckoutConfig } from "@/lib/server/delivery-settings";
 import { jsonError, readJson, HttpError } from "@/lib/server/http";
 import { failInitialization, parseCheckoutInput, reserveOrder, markOrderInitialized } from "@/lib/server/orders";
 import { initializePaystack } from "@/lib/server/paystack";
@@ -14,7 +14,8 @@ const perCallerVoucher = createRateLimiter({ limit: 20, windowMs: 10 * 60_000 })
 
 export async function POST(request: Request) {
   try {
-    const config = checkoutConfig();
+    // Read the delivery areas fresh, so the order uses the price the admin last saved.
+    const config = await loadCheckoutConfig(true);
     const caller = perCaller.check(clientAddress(request));
     if (!caller.ok) return rateLimited(caller.retryAfterSeconds);
     const input = parseCheckoutInput(await readJson(request));

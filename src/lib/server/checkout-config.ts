@@ -30,14 +30,14 @@ export function paymentConfig(): { secretKey: string; mode: PaymentMode } {
   return { secretKey, mode };
 }
 
-export function checkoutConfig(): CheckoutConfig {
+/** Everything checkout needs except the delivery areas, which come from the admin (or the server setting). */
+export function checkoutBase(): Omit<CheckoutConfig, "zones"> {
   const { secretKey, mode } = paymentConfig();
   const siteUrl = process.env.VEGORA_SITE_URL ?? "";
-  const rawZones = process.env.VEGORA_DELIVERY_ZONES_JSON ?? "";
   if (process.env.VEGORA_CHECKOUT_ENABLED !== "true" ||
       process.env.VEGORA_WEBHOOK_CONFIRMED !== "true" ||
       process.env.VEGORA_EXPIRY_JOB_CONFIRMED !== "true" ||
-      (process.env.VEGORA_CRON_SECRET ?? "").trim().length < 32 || !siteUrl || !rawZones) {
+      (process.env.VEGORA_CRON_SECRET ?? "").trim().length < 32 || !siteUrl) {
     throw new ServerConfigError("Checkout is not configured");
   }
   let url: URL;
@@ -45,6 +45,17 @@ export function checkoutConfig(): CheckoutConfig {
   if (url.protocol !== "https:" || url.pathname !== "/" || url.username || url.password || url.search || url.hash) {
     throw new ServerConfigError("Checkout site URL must be HTTPS");
   }
+  return { secretKey, mode, siteUrl: url.origin };
+}
+
+/**
+ * The delivery areas set in the server settings (VEGORA_DELIVERY_ZONES_JSON). They are used until the
+ * admin saves the Delivery screen for the first time; after that the admin's list is used instead.
+ * Returns null when the setting is empty.
+ */
+export function envDeliveryZones(): DeliveryZone[] | null {
+  const rawZones = process.env.VEGORA_DELIVERY_ZONES_JSON ?? "";
+  if (!rawZones) return null;
   let zones: unknown;
   try { zones = JSON.parse(rawZones); } catch { throw new ServerConfigError("Delivery zones are invalid"); }
   if (!Array.isArray(zones) || zones.length === 0 || zones.length > 100) {
@@ -69,7 +80,7 @@ export function checkoutConfig(): CheckoutConfig {
   if (new Set(parsed.map((zone) => zone.id)).size !== parsed.length) {
     throw new ServerConfigError("Delivery zone IDs must be unique");
   }
-  return { secretKey, mode, siteUrl: url.origin, zones: parsed };
+  return parsed;
 }
 
 export function matchingDeliveryZone(config: CheckoutConfig, id: string, region: string, city: string): DeliveryZone | null {

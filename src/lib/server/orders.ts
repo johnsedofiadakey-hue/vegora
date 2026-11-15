@@ -165,7 +165,7 @@ function checkedTotal(lines: OrderLine[], zone: DeliveryZone, discountMinor: num
 
 export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig): Promise<{ order: Order; created: boolean }> {
   const zone = config.zones.find((entry) => entry.id === input.delivery.zoneId);
-  if (!zone) throw new HttpError(400, "Please choose Accra or Tema for delivery");
+  if (!zone) throw new HttpError(400, "Please choose one of the delivery areas shown");
   input = { ...input, delivery: { ...input.delivery, region: zone.region, city: zone.cities?.[0] ?? zone.label } };
   const fingerprint = checkoutFingerprint(input);
   const keyRef = checkoutKeyRef(input.idempotencyKey);

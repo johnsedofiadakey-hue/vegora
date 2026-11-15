@@ -3,7 +3,7 @@ import "./globals.css";
 import { indexingAllowed, shareImageUrl, siteOrigin } from "@/lib/seo";
 
 const title = "VEGORA | The Art of Dressing";
-const description = "Clothes for women and men from VEGORA. Pay online and we deliver in Accra and Tema.";
+const description = "Clothes for women and men from VEGORA. Pay online and we deliver to your door.";
 
 // Evaluated per request so the site address and the launch switch come from the
 // running service rather than being fixed at build time.
