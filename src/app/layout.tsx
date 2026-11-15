@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { clientErrorScript } from "@/lib/client-error";
 import { indexingAllowed, shareImageUrl, siteOrigin } from "@/lib/seo";
 
 const title = "VEGORA | The Art of Dressing";
@@ -24,6 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Tells us when the site's JavaScript fails on someone's phone. See src/lib/client-error.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: clientErrorScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );
