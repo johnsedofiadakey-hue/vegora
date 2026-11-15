@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VEGORA Admin Guide</title>
+<style>
+  :root { --ink:#171717; --muted:#5f5d58; --line:#e2dfd8; --paper:#fbfaf7; --accent:#6d2230; --wash:#f6ecee; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.6 Satoshi, Inter, "Helvetica Neue", Arial, sans-serif; }
+  main { max-width:780px; margin:0 auto; padding:48px 28px 64px; }
+  .brand { letter-spacing:.32em; font-size:13px; font-weight:600; }
+  h1 { font-size:34px; line-height:1.15; margin:10px 0 8px; letter-spacing:-.02em; }
+  .lead { color:var(--muted); font-size:16px; margin:0 0 28px; }
+  h2 { font-size:21px; margin:40px 0 4px; padding-top:22px; border-top:2px solid var(--ink); letter-spacing:-.01em; break-after:avoid; }
+  h2 span { color:var(--accent); margin-right:8px; }
+  .when { color:var(--muted); margin:0 0 14px; }
+  h3 { font-size:15px; margin:22px 0 6px; break-after:avoid; }
+  ol, ul { margin:8px 0 14px; padding-left:22px; }
+  li { margin:6px 0; }
+  li::marker { color:var(--accent); font-weight:700; }
+  .box { background:var(--wash); border-left:4px solid var(--accent); border-radius:8px; padding:12px 16px; margin:16px 0; break-inside:avoid; }
+  .box strong:first-child { display:block; margin-bottom:2px; }
+  .plain { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:16px 0; break-inside:avoid; }
+  b.btn { display:inline-block; padding:1px 9px; border:1px solid #bdb9b0; border-radius:999px; background:#fff; font-weight:600; font-size:13px; white-space:nowrap; }
+  table { width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:14px; break-inside:avoid; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:#f1efe9; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  .foot { margin-top:40px; color:var(--muted); font-size:13px; border-top:1px solid var(--line); padding-top:14px; }
+  @media print {
+    body { background:#fff; font-size:12.5px; }
+    main { padding:0; max-width:none; }
+    h2 { margin-top:26px; break-after:avoid; }
+    a { color:inherit; text-decoration:none; }
+  }
+  @page { margin:16mm 15mm; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">VEGORA</div>
+  <h1>Admin guide: step by step</h1>
+  <p class="lead">How to change delivery prices, write your delivery and payment notes, and move orders along. Short steps in plain words.</p>
+
+  <div class="plain">
+    <strong>Open the admin</strong>
+    <ol>
+      <li>Go to <b>www.shopvegora.com/admin</b> and sign in with your email and password. Save the page as a bookmark; there is no link to it on the shop.</li>
+      <li>The menu is down the left. On a phone, tap the <b class="btn">☰</b> button at the top left.</li>
+      <li>When you finish on a shared computer, tap <b class="btn">Sign out</b>.</li>
+    </ol>
+  </div>
+
+  <h2><span>1</span>Change delivery prices and areas</h2>
+  <p class="when">Menu: <b>Delivery</b>. Use this when a price changes, or when you start delivering to a new place.</p>
+
+  <h3>Change a price</h3>
+  <ol>
+    <li>Tap <b class="btn">Delivery</b> in the menu.</li>
+    <li>Find the area (for example Accra). Type the new price in the <b>Price (GH₵)</b> box. Use cedis, like <b>35</b> or <b>45.50</b>. Type <b>0</b> for free delivery.</li>
+    <li>Tap <b class="btn">Save delivery areas</b>. Wait for the message <b>Saved</b>.</li>
+  </ol>
+
+  <h3>Add a new area</h3>
+  <ol>
+    <li>Tap <b class="btn">Add an area</b>.</li>
+    <li>Type the <b>Area name</b> (for example East Legon) and the <b>Price</b>. Leave <b>Region</b> as it is, unless the place is outside Greater Accra.</li>
+    <li>Tap <b class="btn">Save delivery areas</b>.</li>
+  </ol>
+
+  <h3>Stop delivering to an area for a while</h3>
+  <ol>
+    <li>Find the area and untick the <b>On</b> box. It changes to <b>Off</b>.</li>
+    <li>Tap <b class="btn">Save delivery areas</b>. Customers can no longer choose it.</li>
+    <li>To start again, tick <b>On</b> and save.</li>
+  </ol>
+
+  <h3>Remove an area for good</h3>
+  <ol>
+    <li>Tap <b class="btn">Remove</b> on that area, then <b class="btn">Save delivery areas</b>.</li>
+  </ol>
+
+  <div class="box">
+    <strong>Good to know</strong>
+    <ul>
+      <li>Nothing changes on the shop until you tap <b>Save</b>.</li>
+      <li>A new price works for new orders straight away. <b>Orders already placed keep the price they had</b>, so no customer pays a different amount from what they saw.</li>
+      <li>Keep <b>at least one area On</b>, or customers cannot order.</li>
+      <li>The most you can enter is <b>GH₵500</b> for one area. This stops mistakes like typing 3000 instead of 30.</li>
+      <li>If you see a red message, read it. It tells you what to fix, and nothing was saved.</li>
+    </ul>
+  </div>
+
+  <h2><span>2</span>Write your delivery, payment and other notes</h2>
+  <p class="when">Menu: <b>Website text</b>. These pages stay hidden on the shop until you publish them.</p>
+  <table>
+    <tr><th>Section</th><th>What to put in it</th></tr>
+    <tr><td><b>Delivery information</b></td><td>How long delivery takes, where you deliver, what it costs, what happens if nobody is home, and how customers pay (Paystack: card or mobile money).</td></tr>
+    <tr><td><b>Returns and exchanges</b></td><td>How many days they have, what can come back, who pays for return delivery, how refunds are paid.</td></tr>
+    <tr><td><b>Terms of sale</b></td><td>The rules of buying from you, including payment terms.</td></tr>
+    <tr><td><b>Privacy policy</b></td><td>What details you keep (name, phone, address) and why.</td></tr>
+  </table>
+
+  <ol>
+    <li>Tap <b class="btn">Website text</b>, then pick the section from the list.</li>
+    <li>Type the page title and the text. Leave one blank line between paragraphs. The text is plain: no bold, no links.</li>
+    <li>Tap <b class="btn">Save draft</b>. This keeps your work private. The shop does not change yet.</li>
+    <li>Tap <b class="btn">Publish</b> and confirm. The page is now live and a link appears at the bottom of the shop.</li>
+    <li>Tap <b class="btn">View the live page</b> at the bottom of the section and read it once. Changes show within about 30 seconds.</li>
+  </ol>
+  <div class="box">
+    <strong>Made a mistake?</strong>
+    Open <b>Earlier versions</b>, choose the one you want, then tap <b>Publish</b> again. To throw away edits you have not published, tap <b>Discard changes</b>.
+  </div>
+  <p>Use wording you are happy to stand behind. Do not copy another shop's policy word for word.</p>
+
+  <h3>Change your phone, WhatsApp, email or social accounts</h3>
+  <ol>
+    <li>Tap <b class="btn">Website text</b>, then <b>Contact and footer</b>.</li>
+    <li>Change the details you want. Type social names without the @ sign.</li>
+    <li>Tap <b class="btn">Save draft</b>, then <b class="btn">Publish</b>. The green WhatsApp button on the shop uses the WhatsApp number from here.</li>
+  </ol>
+
+  <h2><span>3</span>Move an order along (delivery progress)</h2>
+  <p class="when">Menu: <b>Orders</b>. The number next to Orders shows paid orders still waiting to go out.</p>
+  <ol>
+    <li>Tap <b class="btn">Orders</b>. Use the search box to find an order by order number, name or phone number.</li>
+    <li>Tap the order. You see what to pack, the customer's phone and the delivery address.</li>
+    <li>Only orders marked <b>Paid</b> can be moved on. Under <b>Delivery progress</b>, choose the next step in <b>Status</b>: <b>Preparing</b>, then <b>Dispatched</b>, then <b>Delivered</b>.</li>
+    <li>For <b>Dispatched</b>, fill in <b>Delivery provider</b> (the rider or company) and the <b>Tracking reference</b>. The customer sees both when they track their order.</li>
+    <li>Tap <b class="btn">Save delivery update</b>.</li>
+  </ol>
+  <div class="box">
+    <strong>Notes and corrections</strong>
+    <ul>
+      <li><b>Internal note</b> is only for your team. Customers never see it. Use it for things like "customer changed the address by phone" or "call before arriving".</li>
+      <li>If you chose a step by mistake, you can move back <b>one step</b>. <b>Delivered</b> is final.</li>
+      <li>Payment status is set by the payment company. You cannot change it by hand. If an order says <b>Needs review</b>, do not send it. Call your developer.</li>
+    </ul>
+  </div>
+
+  <h3>When a customer calls about their order</h3>
+  <ol>
+    <li>Ask for the order number (it looks like <b>VG-7K2M9QXA</b>). If they lost it, search by the phone number they used, check it is really them (for example ask what they bought), then read the number out.</li>
+    <li>Tell them they can follow the order any time on the <b>Track order</b> page at the bottom of the shop, using the order number and their phone number.</li>
+  </ol>
+
+  <h2><span>4</span>What you cannot change here</h2>
+  <table>
+    <tr><th>Thing</th><th>What to do</th></tr>
+    <tr><td>A customer's name, phone or address on an order</td><td>You can read them but not edit them. Write the correction in the <b>Internal note</b> and tell your rider.</td></tr>
+    <tr><td>Payment status or amounts</td><td>Set automatically by the payment company. If something looks wrong, tell your developer with the order number.</td></tr>
+    <tr><td>Checkout wording (for example "save your order number")</td><td>Ask your developer.</td></tr>
+  </table>
+
+  <h2><span>5</span>If something looks wrong</h2>
+  <table>
+    <tr><th>Problem</th><th>What to do</th></tr>
+    <tr><td>I saved, but the shop did not change</td><td>Website text needs <b>Publish</b>, not just Save draft. Then wait about 30 seconds and refresh.</td></tr>
+    <tr><td>"Someone else changed this section"</td><td>Tap <b>Reload this section</b>, then make your change again.</td></tr>
+    <tr><td>A delivery price did not save</td><td>Read the red message under the area list. It says what to fix, for example a missing name or a price above GH₵500.</td></tr>
+    <tr><td>A page I wrote shows "not found" on the shop</td><td>Delivery, Returns, Privacy and Terms stay hidden until you <b>Publish</b> text for them.</td></tr>
+    <tr><td>I cannot sign in</td><td>Check your email and password. If it still fails, ask your developer to reset it.</td></tr>
+  </table>
+
+  <p class="foot">VEGORA admin guide · Prepared 15 November 2026 · Keep your password private. Never share it by message.</p>
+</main>
+</body>
+</html>
