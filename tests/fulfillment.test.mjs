@@ -39,8 +39,8 @@ test("a mistaken step can be undone one step back, but delivered is final", () =
 
 test("delivery update input is validated before anything is written", () => {
   const ok = parseFulfillmentInput({ status: "dispatched", provider: " VEGORA delivery ", trackingReference: " VG-DEL-1001 ", note: " left with front desk " });
-  assert.deepEqual(ok, { status: "dispatched", provider: "VEGORA delivery", trackingReference: "VG-DEL-1001", note: "left with front desk" });
-  assert.deepEqual(parseFulfillmentInput({ status: "preparing" }), { status: "preparing", provider: "", trackingReference: "", note: "" });
+  assert.deepEqual(ok, { status: "dispatched", provider: "VEGORA delivery", trackingReference: "VG-DEL-1001", note: "left with front desk", cashReceived: false });
+  assert.deepEqual(parseFulfillmentInput({ status: "preparing" }), { status: "preparing", provider: "", trackingReference: "", note: "", cashReceived: false });
   assert.equal(parseFulfillmentInput({ status: "preparing", note: "line one\nline two" }).note, "line one\nline two");
 
   const rejected = [

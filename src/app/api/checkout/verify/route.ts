@@ -12,6 +12,10 @@ export async function GET(request: Request) {
     if (!/^VG-[0-9a-f]{32}$/.test(reference)) throw new HttpError(400, "Invalid payment reference");
     const order = await getOrder(reference);
     if (!order) throw new HttpError(404, "Order not found");
+    // Pay on delivery has no online payment to check.
+    if (order.paymentMethod === "cash_on_delivery") {
+      return Response.json({ status: order.status, method: "cash_on_delivery" }, { headers: { "Cache-Control": "no-store" } });
+    }
     const verification = await verifyPaystack(reference, config.secretKey);
     if (verification.reference !== reference) throw new PaystackError("Payment reference mismatch");
     const reconciled = await reconcilePayment(verification);

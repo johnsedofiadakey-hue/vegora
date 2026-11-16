@@ -10,6 +10,7 @@ import { paymentAction, type OrderStatus } from "./payment-policy";
 import { paymentConfig } from "./checkout-config";
 import { verifyPaystack } from "./paystack";
 import { placeholderEmail } from "../contact";
+import { codHoldUntil, codNeverExpires, codProblem, maxOpenCodPerPhone, parsePaymentMethod, type PaymentMethod } from "../payment-method";
 import { computeDiscount, normalizeVoucherCode, voucherMessage, voucherProblem } from "../voucher";
 import { formatMinor, readVoucher, readVoucherSettings, voucherCustomerRef, voucherEventRef, voucherRef } from "./vouchers";
 import { emptyFulfillment, FulfillmentInputError, fulfillmentTransition, parseFulfillmentInput, shortOrderCode,
@@ -27,6 +28,8 @@ export interface CheckoutInput {
   idempotencyKey: string;
   /** Normalised voucher code, or null. Only the code is accepted from the browser; the server works out the rest. */
   voucherCode: string | null;
+  /** How the customer wants to pay. Whether it is allowed is decided on the server. */
+  paymentMethod: PaymentMethod;
 }
 export interface OrderLine extends CheckoutItem { name: string; size: string; sku: string; unitPriceMinor: number; lineTotalMinor: number }
 export interface Order {
@@ -53,6 +56,14 @@ export interface Order {
   fulfillment?: Fulfillment;
   /** Short order number shown to customers, derived from the reference. */
   shortCode?: string;
+  /** Orders made before pay on delivery existed have no method: they were all paid with Paystack. */
+  paymentMethod?: PaymentMethod;
+  /** Pay on delivery: when the admin rang the customer and confirmed the order. Delivery steps unlock after this. */
+  codConfirmedAt?: string | null;
+  codConfirmedBy?: string | null;
+  cancelledAt?: string | null;
+  cancelledBy?: string | null;
+  cancelReason?: string | null;
 }
 
 function boundedText(value: unknown, name: string, max: number, required = true): string {
@@ -128,13 +139,15 @@ export function parseCheckoutInput(value: unknown): CheckoutInput {
     voucherCode = normalizeVoucherCode(input.voucherCode);
     if (!voucherCode) throw new HttpError(400, voucherMessage({ reason: "unavailable" }, formatMinor));
   }
+  let paymentMethod: PaymentMethod;
+  try { paymentMethod = parsePaymentMethod(input.paymentMethod); } catch { throw new HttpError(400, "Choose how you want to pay"); }
   const idempotencyKey = boundedText(input.idempotencyKey, "Checkout key", 36);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
     throw new HttpError(400, "Checkout key must be a random UUID");
   }
   return { email, customer: { name, phone },
     delivery: { zoneId, addressLine1, addressLine2, city, region, notes },
-    items, idempotencyKey: idempotencyKey.toLowerCase(), voucherCode };
+    items, idempotencyKey: idempotencyKey.toLowerCase(), voucherCode, paymentMethod };
 }
 
 export function checkoutFingerprint(input: CheckoutInput): string {
@@ -171,7 +184,10 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
   const keyRef = checkoutKeyRef(input.idempotencyKey);
   const reference = `VG-${randomUUID().replace(/-/g, "")}`;
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 30 * 60_000).toISOString();
+  const cod = input.paymentMethod === "cash_on_delivery";
+  // Paystack orders hold the stock for 30 minutes. A pay-on-delivery order holds it for 48 hours,
+  // until the admin confirms it by phone (then it holds until delivered or cancelled).
+  const expiresAt = cod ? codHoldUntil(now.getTime()) : new Date(now.getTime() + 30 * 60_000).toISOString();
   const productSlugs = [...new Set(input.items.map((item) => item.slug))];
   const refs = productSlugs.map((slug) => storeDb().collection("products").doc(slug));
   return storeDb().runTransaction(async (tx) => {
@@ -230,18 +246,29 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
       };
     }
     const { subtotalMinor, totalMinor } = checkedTotal(lines, zone, discountMinor);
-    const order: Order = { reference, fingerprint, status: "initializing", email: input.email,
+    if (cod) {
+      // The server decides whether pay on delivery is allowed here and for this amount.
+      const problem = codProblem(config.cod, { cod: zone.cod === true }, totalMinor);
+      if (problem) throw new HttpError(400, problem);
+      // Nothing checks who is ordering, so one phone number may only have a couple of open orders.
+      const open = await tx.get(storeDb().collection("orders").where("email", "==", input.email).where("status", "==", "pay_on_delivery").limit(maxOpenCodPerPhone));
+      if (open.size >= maxOpenCodPerPhone) {
+        throw new HttpError(429, "You already have pay-on-delivery orders waiting. Please wait until they arrive, or pay online for this one");
+      }
+    }
+    const order: Order = { reference, fingerprint, status: cod ? "pay_on_delivery" : "initializing", email: input.email,
       customer: input.customer,
       delivery: { ...input.delivery, zoneLabel: zone.label, feeMinor: zone.feeMinor },
       lines, subtotalMinor, discountMinor, voucher: voucherUse, deliveryFeeMinor: zone.feeMinor, totalMinor, currency: "GHS",
       authorizationUrl: null, createdAt: now.toISOString(), updatedAt: now.toISOString(),
       reservationExpiresAt: expiresAt, paymentStatus: null, paidAt: null,
-      fulfillment: { ...emptyFulfillment }, shortCode: shortOrderCode(reference) ?? undefined };
+      fulfillment: { ...emptyFulfillment }, shortCode: shortOrderCode(reference) ?? undefined,
+      paymentMethod: input.paymentMethod, codConfirmedAt: null };
     for (const [slug, record] of records) tx.set(storeDb().collection("products").doc(slug), record);
     voucherWrites?.();
     tx.create(orderRef(reference), order);
     tx.create(keyRef, { reference, fingerprint, createdAt: now.toISOString() });
-    recordEvent(tx, order, "reserved", "initializing");
+    recordEvent(tx, order, cod ? "cod_placed" : "reserved", "initializing");
     return { order, created: true };
   });
 }
@@ -357,20 +384,68 @@ export async function updateOrderFulfillment(reference: string, value: unknown, 
     const order = snap.data() as Order | undefined;
     if (!order) throw new HttpError(404, "Order not found");
     const current = order.fulfillment ?? emptyFulfillment;
-    const kind = fulfillmentTransition(order.status, current.status, status);
+    const kind = fulfillmentTransition(order.status, current.status, status, Boolean(order.codConfirmedAt));
     if (!kind) {
-      throw new HttpError(409, "Delivery can change only after verified payment, one step at a time, and never after it is delivered");
+      throw new HttpError(409, order.status === "pay_on_delivery"
+        ? "Confirm this pay-on-delivery order by phone first. After that, delivery moves one step at a time"
+        : "Delivery can change only after verified payment, one step at a time, and never after it is delivered");
     }
     const unchanged = current.status === status && current.provider === nextProvider &&
       current.trackingReference === nextReference;
     if (unchanged && !note) return order;
     const now = new Date().toISOString();
     const fulfillment: Fulfillment = { status, provider: nextProvider, trackingReference: nextReference, updatedAt: now };
-    const next: Order = { ...order, fulfillment, updatedAt: now };
+    let next: Order = { ...order, fulfillment, updatedAt: now };
+    // Delivering a pay-on-delivery order is the moment the money is handed over. The admin must say it was
+    // received; then, in this same step, the order becomes Paid, the stock comes off for good and a voucher use counts.
+    if (order.status === "pay_on_delivery" && status === "delivered" && current.status !== "delivered") {
+      if (!input.cashReceived) throw new HttpError(400, `Tick the box to say you received ${formatMinor(order.totalMinor)} before marking this order delivered`);
+      if (!await settleReservation(tx, order, "capture")) throw new HttpError(409, "The stock for this order no longer adds up. Check it before marking it delivered");
+      next = { ...next, status: "paid", paymentStatus: "cash_collected", paidAt: now };
+      recordEvent(tx, next, "cod_cash_received", order.status, "cash_collected");
+    }
     tx.set(ref, next);
     tx.create(ref.collection("fulfillmentEvents").doc(), {
       status, provider: nextProvider, trackingReference: nextReference, at: now, kind, note: note || null, actorUid,
     });
+    return next;
+  });
+}
+
+/** The admin rang the customer and the order is real. Delivery steps unlock, and the stock is held until delivered or cancelled. */
+export async function confirmCodOrder(reference: string, actorUid: string): Promise<Order> {
+  if (!/^VG-[0-9a-f]{32}$/.test(reference)) throw new HttpError(404, "Order not found");
+  const ref = orderRef(reference);
+  return storeDb().runTransaction(async (tx) => {
+    const order = (await tx.get(ref)).data() as Order | undefined;
+    if (!order) throw new HttpError(404, "Order not found");
+    if (order.status !== "pay_on_delivery") throw new HttpError(409, "Only a pay-on-delivery order can be confirmed");
+    if (order.codConfirmedAt) return order;
+    const now = new Date().toISOString();
+    const next: Order = { ...order, codConfirmedAt: now, codConfirmedBy: actorUid, reservationExpiresAt: codNeverExpires, updatedAt: now };
+    tx.set(ref, next);
+    recordEvent(tx, next, "cod_confirmed", order.status);
+    return next;
+  });
+}
+
+/** Stops a pay-on-delivery order that has not been delivered: the customer refused, could not be reached, or changed their mind. */
+export async function cancelCodOrder(reference: string, reason: unknown, actorUid: string): Promise<Order> {
+  if (!/^VG-[0-9a-f]{32}$/.test(reference)) throw new HttpError(404, "Order not found");
+  const why = typeof reason === "string" ? reason.trim().slice(0, 200) : "";
+  if (/[\u0000-\u001f\u007f]/.test(why)) throw new HttpError(400, "The reason has characters that are not allowed");
+  const ref = orderRef(reference);
+  return storeDb().runTransaction(async (tx) => {
+    const order = (await tx.get(ref)).data() as Order | undefined;
+    if (!order) throw new HttpError(404, "Order not found");
+    if (order.status === "cancelled") return order;
+    if (order.status !== "pay_on_delivery") throw new HttpError(409, "Only a pay-on-delivery order can be cancelled here");
+    if (order.fulfillment?.status === "delivered") throw new HttpError(409, "A delivered order cannot be cancelled");
+    if (!await settleReservation(tx, order, "release")) throw new HttpError(500, "Unable to release reserved stock");
+    const now = new Date().toISOString();
+    const next: Order = { ...order, status: "cancelled", cancelledAt: now, cancelledBy: actorUid, cancelReason: why || null, updatedAt: now };
+    tx.set(ref, next);
+    recordEvent(tx, next, "cod_cancelled", order.status, why || null);
     return next;
   });
 }
@@ -392,6 +467,7 @@ export async function reconcilePayment(verification: PaystackVerification): Prom
     const snap = await tx.get(ref);
     const order = snap.data() as Order | undefined;
     if (!order) return null;
+    if (order.paymentMethod === "cash_on_delivery") return order;
     const now = new Date().toISOString();
     const action = paymentAction(order, verification, now, paymentConfig().mode);
     if (action === "keep") return order;
@@ -440,12 +516,13 @@ export async function reconcilePayment(verification: PaystackVerification): Prom
 export async function expireReservations(limit = 50): Promise<number> {
   const now = new Date().toISOString();
   const snap = await storeDb().collection("orders")
-    .where("status", "in", ["initializing", "pending_payment"])
+    .where("status", "in", ["initializing", "pending_payment", "pay_on_delivery"])
     .where("reservationExpiresAt", "<=", now)
     .limit(limit).get();
   let expired = 0;
   for (const doc of snap.docs) {
     const before = doc.data() as Order;
+    if (before.status === "pay_on_delivery" && before.codConfirmedAt) continue;
     if (before.status === "pending_payment") {
       const verification = await verifyPaystack(before.reference, paymentConfig().secretKey);
       if (verification.reference !== before.reference) throw new HttpError(502, "Payment reference mismatch during expiry check");
@@ -457,7 +534,9 @@ export async function expireReservations(limit = 50): Promise<number> {
     const didExpire = await storeDb().runTransaction(async (tx) => {
       const fresh = await tx.get(doc.ref);
       const order = fresh.data() as Order | undefined;
-      if (!order || !["initializing", "pending_payment"].includes(order.status) || order.reservationExpiresAt > now) return false;
+      if (!order || !["initializing", "pending_payment", "pay_on_delivery"].includes(order.status) || order.reservationExpiresAt > now) return false;
+      // A pay-on-delivery order the admin has confirmed never expires by itself.
+      if (order.status === "pay_on_delivery" && order.codConfirmedAt) return false;
       if (!await settleReservation(tx, order, "release")) throw new HttpError(500, "Unable to release reserved stock");
       const next: Order = { ...order, status: "expired", updatedAt: now };
       tx.set(doc.ref, next);

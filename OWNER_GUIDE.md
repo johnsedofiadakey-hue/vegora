@@ -91,13 +91,15 @@ The footer of every page has a "Get our news" box under the VEGORA logo where vi
 
 Each order has an **order number** like `VG-7K2M9QXA`. Customers see this number, so ask for it when they get in touch.
 
-**Payment status** (set automatically; you cannot change it by hand):
+**Payment status** (set automatically; you cannot change it by hand, except the pay-on-delivery steps in the section below):
 
 | Status | Meaning |
 |---|---|
 | pending payment | The customer has started paying and the stock is held for 30 minutes. |
 | paid | Payment was confirmed with the payment company. Only now should you prepare the order. |
 | failed or expired | Payment did not happen. The stock goes back on sale automatically. |
+| pay on delivery | The customer chose to pay when it arrives. Confirm it by phone first. See **Pay on delivery** below. |
+| cancelled | A pay-on-delivery order you cancelled. The stock went back on sale. |
 | review required | Something did not add up, for example a payment arriving after the hold expired. **Do not ship.** Contact your developer. |
 
 **Delivery progress** (you set this, and only for paid orders): **Preparing, then Dispatched, then Delivered.**
@@ -149,6 +151,34 @@ Things to know:
 - The first time, the list shows your starting areas (Accra and Tema). Change anything and press Save, and from then on they are managed here.
 
 **Where the other notes live.** Words about delivery times, returns, privacy and terms are written in **Website text**, in the sections *Delivery information*, *Returns and exchanges*, *Privacy policy* and *Terms of sale*. Those four pages stay hidden until you publish text for them. Delivery progress for each order (Preparing, Dispatched, Delivered, with the rider and tracking reference, plus the private Internal note) is set inside **Orders**.
+
+## Pay on delivery
+
+Customers can choose to **pay when the order arrives** (cash or mobile money to the rider). It is **off until you switch it on**, in **Delivery**.
+
+**Turn it on**
+1. Open **Delivery**.
+2. In the **Pay on delivery** box, tick the switch so it says **ON**.
+3. Type the **Highest order amount** (for example `500`). Bigger orders must be paid online. The most you can enter is 2000.
+4. In the list of areas, tick **Allow pay on delivery** only for the areas where your own riders deliver.
+5. Press **Save delivery areas**.
+
+At checkout, customers in those areas then see **How do you want to pay?** with **Pay now, online** and **Pay when it arrives**.
+
+**What you do with each order**
+1. A new order shows in **Orders** as **Call to confirm** (and the number beside Orders goes up). **Do not pack it yet.**
+2. Open the order. Ring the customer, check it was them, check the items and address, and tell them how much they will pay.
+3. Press **Confirm order**. Now the delivery steps unlock: **Preparing**, **Dispatched** (enter the rider and a reference), **Delivered**.
+4. When the rider hands the order over and gets the money, choose **Delivered**, tick **I received GH₵… from the customer**, and save. Only then does the order count as **Paid**, and the sale shows in Insights.
+5. If the customer refuses, cannot be reached or changes their mind, press **Cancel order** (you can write why). The stock goes back on sale. You can cancel any order that is not yet delivered.
+
+**Rules that protect you**
+- An order you do not confirm within **2 days** is cancelled by the system and the stock goes back on sale.
+- One phone number can have at most **2** pay-on-delivery orders open at a time.
+- Vouchers work with pay on delivery. The voucher counts as used only when the money is received, and it is given back if you cancel.
+- Customers can follow these orders on **Track order**. Before you confirm, they see "We will call you to confirm". After, they see the progress and how much to pay.
+- Insights shows how many pay-on-delivery orders are open and how much cash is still to collect.
+- **The honest limit:** the phone call is your only check that an order is real. If someone orders as a prank, it costs you one phone call, and the system cancels it after 2 days. If you see a number misusing it, cancel its orders and turn **Allow pay on delivery** off for that area until it stops.
 
 ## The green WhatsApp button
 

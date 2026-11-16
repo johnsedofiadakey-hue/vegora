@@ -71,3 +71,20 @@ test("the change label compares with the period before", () => {
   assert.equal(changeLabel(100, 0), null);
   assert.equal(changeLabel(100, null), null);
 });
+
+test("open pay-on-delivery orders are cash to collect, not sales, and cancelled ones are ignored", () => {
+  const orders = [
+    order("pay_on_delivery", "2026-11-10T09:00:00Z", { totalMinor: 28000 }),
+    order("pay_on_delivery", "2026-11-01T09:00:00Z", { totalMinor: 12000 }),
+    order("cancelled", "2026-11-10T10:00:00Z"),
+    order("expired", "2026-11-10T10:30:00Z"),
+    order("paid", "2026-11-10T11:00:00Z"),
+  ];
+  const today = summarizeSales(orders, "today", now);
+  assert.equal(today.codOpen, 2);
+  assert.equal(today.codOpenMinor, 40000);
+  assert.equal(today.salesMinor, 21000);
+  assert.equal(today.orders, 1);
+  // A cancelled pay-on-delivery order is not an abandoned checkout.
+  assert.equal(today.unpaidCheckouts, 1);
+});

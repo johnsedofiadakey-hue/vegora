@@ -18,7 +18,22 @@ export interface DeliveryArea {
   feeMinor: number;
   /** Off means customers cannot choose it. Past orders are not touched. */
   active: boolean;
+  /** Whether customers here may choose to pay when the order arrives. Needs the shop-wide switch too. */
+  cod: boolean;
 }
+
+/** Shop-wide settings for pay on delivery. Off until the owner switches it on. */
+export interface CodSettings {
+  enabled: boolean;
+  /** The most an order may cost to be paid on delivery, in pesewas. */
+  maxOrderMinor: number;
+}
+
+/** Never above GH₵2,000, whatever the admin types: a limit on how much cash risk the shop can take on by mistake. */
+export const hardMaxCodMinor = 200_000;
+export const defaultCodMaxMinor = 50_000;
+export const minCodMaxMinor = 1_000;
+export const defaultCodSettings: CodSettings = { enabled: false, maxOrderMinor: defaultCodMaxMinor };
 
 export class DeliveryInputError extends Error {
   constructor(message: string) {
@@ -96,7 +111,10 @@ export function parseDeliveryAreas(input: unknown, current: readonly DeliveryAre
     const key = label.toLocaleLowerCase();
     if (labels.has(key)) fail(`There are two areas called ${label}. Give each area its own name`);
     labels.add(key);
-    areas.push({ id, label, region, feeMinor: fee, active: value.active });
+    if (value.cod !== undefined && typeof value.cod !== "boolean") fail("Choose whether pay on delivery is allowed in each area");
+    // An area the admin did not say anything about keeps what it had; a new area starts with it off.
+    const cod = typeof value.cod === "boolean" ? value.cod : known.get(id)?.cod ?? false;
+    areas.push({ id, label, region, feeMinor: fee, active: value.active, cod });
   }
 
   if (!areas.some((area) => area.active)) fail("Keep at least one area switched on. With none on, customers cannot order");
@@ -113,4 +131,30 @@ export function cedisToMinor(text: string): number {
   const value = text.trim().replace(/^GH[₵C]?\s*/i, "");
   if (!/^\d{1,6}(\.\d{1,2})?$/.test(value)) return Number.NaN;
   return Math.round(Number(value) * 100);
+}
+
+/** Checks the pay-on-delivery settings. Anything left out keeps its current value. */
+export function parseCodSettings(input: unknown, current: CodSettings = defaultCodSettings): CodSettings {
+  if (input === undefined || input === null) return current;
+  if (typeof input !== "object" || Array.isArray(input)) fail("Pay on delivery settings are not valid");
+  const value = input as Record<string, unknown>;
+  if (value.enabled !== undefined && typeof value.enabled !== "boolean") fail("Choose whether pay on delivery is on or off");
+  const enabled = typeof value.enabled === "boolean" ? value.enabled : current.enabled;
+  let maxOrderMinor = current.maxOrderMinor;
+  if (value.maxOrderMinor !== undefined) {
+    const max = value.maxOrderMinor;
+    if (typeof max !== "number" || !Number.isSafeInteger(max)) fail("The highest order amount must be in cedis, for example 500");
+    if (max < minCodMaxMinor) fail(`The highest order amount must be at least GH₵${minCodMaxMinor / 100}`);
+    if (max > hardMaxCodMinor) fail(`The highest order amount for pay on delivery cannot be more than GH₵${hardMaxCodMinor / 100}`);
+    maxOrderMinor = max;
+  }
+  return { enabled, maxOrderMinor };
+}
+
+/** The whole Delivery screen in one go: the areas and the pay-on-delivery settings. */
+export function parseDeliverySettings(
+  input: unknown, current: { areas: readonly DeliveryArea[]; cod: CodSettings },
+): { areas: DeliveryArea[]; cod: CodSettings } {
+  const cod = input && typeof input === "object" && !Array.isArray(input) ? (input as { cod?: unknown }).cod : undefined;
+  return { areas: parseDeliveryAreas(input, current.areas), cod: parseCodSettings(cod, current.cod) };
 }

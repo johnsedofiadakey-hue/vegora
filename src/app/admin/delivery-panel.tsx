@@ -2,19 +2,20 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { cedisToMinor, defaultRegion, maxAreaLabel, maxDeliveryAreas, maxDeliveryFeeMinor, type DeliveryArea } from "@/lib/delivery";
+import { cedisToMinor, defaultRegion, hardMaxCodMinor, maxAreaLabel, maxDeliveryAreas, maxDeliveryFeeMinor, type CodSettings, type DeliveryArea } from "@/lib/delivery";
+import { codHoldHours, maxOpenCodPerPhone } from "@/lib/payment-method";
 import styles from "./studio.module.css";
 
 type AdminFetch = (path: string, init?: RequestInit) => Promise<unknown>;
 type Notice = { kind: "ok" | "error"; text: string } | null;
-type Loaded = { areas: DeliveryArea[]; source: "admin" | "server"; updatedAt: string | null };
+type Loaded = { areas: DeliveryArea[]; cod: CodSettings; source: "admin" | "server"; updatedAt: string | null };
 // One editable row. "id" is empty for an area that has not been saved yet.
-type Row = { key: number; id: string; label: string; region: string; fee: string; active: boolean };
+type Row = { key: number; id: string; label: string; region: string; fee: string; active: boolean; cod: boolean };
 
 const json = { "Content-Type": "application/json" };
 let nextKey = 1;
-const toRow = (area: DeliveryArea): Row => ({ key: nextKey++, id: area.id, label: area.label, region: area.region, fee: (area.feeMinor / 100).toFixed(2).replace(/\.00$/, ""), active: area.active });
-const blankRow = (): Row => ({ key: nextKey++, id: "", label: "", region: defaultRegion, fee: "", active: true });
+const toRow = (area: DeliveryArea): Row => ({ key: nextKey++, id: area.id, label: area.label, region: area.region, fee: (area.feeMinor / 100).toFixed(2).replace(/\.00$/, ""), active: area.active, cod: area.cod });
+const blankRow = (): Row => ({ key: nextKey++, id: "", label: "", region: defaultRegion, fee: "", active: true, cod: false });
 
 export function DeliveryPanel({ adminFetch }: { adminFetch: AdminFetch }) {
   const [data, setData] = useState<Loaded | null>(null);
@@ -22,11 +23,15 @@ export function DeliveryPanel({ adminFetch }: { adminFetch: AdminFetch }) {
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState(false);
+  // Pay on delivery, shop-wide. The limit is typed in cedis.
+  const [codOn, setCodOn] = useState(false);
+  const [codMax, setCodMax] = useState("500");
 
   const load = useCallback(async () => {
     try {
       const result = await adminFetch("/api/admin/delivery") as Loaded;
       setData(result); setRows(result.areas.map(toRow)); setLoadError("");
+      setCodOn(result.cod.enabled); setCodMax(String(result.cod.maxOrderMinor / 100));
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Unable to load delivery areas");
     }
@@ -46,12 +51,14 @@ export function DeliveryPanel({ adminFetch }: { adminFetch: AdminFetch }) {
       const feeMinor = cedisToMinor(row.fee);
       if (!row.label.trim()) { setNotice({ kind: "error", text: "Every area needs a name." }); return; }
       if (Number.isNaN(feeMinor)) { setNotice({ kind: "error", text: `Check the price for ${row.label.trim()}. Type it in cedis, for example 30 or 45.50. Type 0 for free delivery.` }); return; }
-      areas.push({ ...(row.id ? { id: row.id } : {}), label: row.label, region: row.region, feeMinor, active: row.active });
+      areas.push({ ...(row.id ? { id: row.id } : {}), label: row.label, region: row.region, feeMinor, active: row.active, cod: row.cod });
     }
+    const maxOrderMinor = cedisToMinor(codMax);
+    if (Number.isNaN(maxOrderMinor)) { setNotice({ kind: "error", text: "Check the highest order amount for pay on delivery. Type it in cedis, for example 500." }); return; }
     setBusy(true); setNotice(null);
     try {
-      const result = await adminFetch("/api/admin/delivery", { method: "PUT", headers: json, body: JSON.stringify({ areas }) }) as Loaded;
-      setData(result); setRows(result.areas.map(toRow));
+      const result = await adminFetch("/api/admin/delivery", { method: "PUT", headers: json, body: JSON.stringify({ areas, cod: { enabled: codOn, maxOrderMinor } }) }) as Loaded;
+      setData(result); setRows(result.areas.map(toRow)); setCodOn(result.cod.enabled); setCodMax(String(result.cod.maxOrderMinor / 100));
       setNotice({ kind: "ok", text: "Saved. The new prices work for new orders straight away. Orders already placed keep the price they were made with." });
     } catch (error) {
       setNotice({ kind: "error", text: error instanceof Error ? error.message : "That did not save" });
@@ -69,12 +76,25 @@ export function DeliveryPanel({ adminFetch }: { adminFetch: AdminFetch }) {
     {data.source === "server" && <p className={styles.note}>These are your starting areas. Change anything below and press Save, and you can manage them here from now on.</p>}
 
     <form className={styles.card} onSubmit={save}>
+      <h2>Pay on delivery</h2>
+      <label className={styles.vSwitch}><input type="checkbox" checked={codOn} onChange={(event) => setCodOn(event.target.checked)} /><span><strong>{codOn ? "Pay on delivery is ON" : "Pay on delivery is OFF"}</strong><small>When on, customers in the areas you tick below can choose to pay cash or mobile money to the rider when the order arrives.</small></span></label>
+      <label className={styles.vField}>Highest order amount (GH₵)<input inputMode="decimal" value={codMax} onChange={(event) => setCodMax(event.target.value)} aria-describedby="cod-max-help" /><small id="cod-max-help">Bigger orders must be paid online. The most you can enter is {hardMaxCodMinor / 100}.</small></label>
+      <div className={styles.codRules}>
+        <strong>How it works, so nobody wastes a trip:</strong>
+        <ul>
+          <li>A pay-on-delivery order waits in <b>Orders</b> as <b>Call to confirm</b>. Ring the customer and press <b>Confirm order</b> before you pack anything.</li>
+          <li>An order you do not confirm within {codHoldHours} hours is cancelled by the system and the stock goes back on sale.</li>
+          <li>One phone number can have at most {maxOpenCodPerPhone} pay-on-delivery orders open at a time.</li>
+          <li>When you mark it Delivered you tick that you received the money. Only then does it count as paid.</li>
+        </ul>
+      </div>
       <h2>Delivery areas</h2>
       <ul className={styles.dRows}>{rows.map((row, index) => <li key={row.key} className={row.active ? undefined : styles.dOff}>
         <label className={styles.vField}>Area name<input value={row.label} maxLength={maxAreaLabel} onChange={(event) => change(row.key, { label: event.target.value })} placeholder="For example: East Legon" required /></label>
         <label className={styles.vField}>Price (GH₵)<input inputMode="decimal" value={row.fee} onChange={(event) => change(row.key, { fee: event.target.value })} placeholder="30" required aria-describedby={`fee-help-${row.key}`} /><small id={`fee-help-${row.key}`}>0 means free delivery. Most you can enter: {maxDeliveryFeeMinor / 100}.</small></label>
         <label className={styles.vField}>Region<input value={row.region} maxLength={60} onChange={(event) => change(row.key, { region: event.target.value })} /><small>Shown on the order.</small></label>
         <div className={styles.dActions}>
+          <label className={styles.vSwitch}><input type="checkbox" checked={row.cod} onChange={(event) => change(row.key, { cod: event.target.checked })} /><span><strong>Allow pay on delivery</strong><small>{row.cod ? (codOn ? "Customers here can pay on delivery." : "Ticked, but pay on delivery is off above.") : "Customers here must pay online."}</small></span></label>
           <label className={styles.vSwitch}><input type="checkbox" checked={row.active} onChange={(event) => change(row.key, { active: event.target.checked })} /><span><strong>{row.active ? "On" : "Off"}</strong><small>{row.active ? "Customers can choose it." : "Customers cannot choose it."}</small></span></label>
           {rows.length > 1 && <button type="button" className={styles.secondary} onClick={() => setRows((current) => current.filter((item) => item.key !== row.key))} aria-label={`Remove ${row.label || `area ${index + 1}`}`}><Trash2 size={14} aria-hidden="true" /> Remove</button>}
         </div>

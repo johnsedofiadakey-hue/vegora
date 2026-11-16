@@ -51,6 +51,7 @@ export function InsightsPanel({ orders, truncated, busy, onRefresh }: { orders: 
     <p className={styles.insightNote}>
       Sales include {formatGhs(summary.deliveryFeesMinor)} in delivery fees
       {summary.discountsMinor > 0 ? <> and are after {formatGhs(summary.discountsMinor)} of voucher discounts ({summary.vouchersUsed} {summary.vouchersUsed === 1 ? "voucher" : "vouchers"} used)</> : null}.
+      {summary.codOpen > 0 && <> {summary.codOpen} pay-on-delivery {summary.codOpen === 1 ? "order is" : "orders are"} open ({formatGhs(summary.codOpenMinor)} to collect). It counts as a sale once you mark it delivered and received.</>}
       {summary.unpaidCheckouts > 0 && <> {summary.unpaidCheckouts} {summary.unpaidCheckouts === 1 ? "checkout was" : "checkouts were"} started but not paid.</>}
       {summary.needsReview > 0 && <> <strong>{summary.needsReview} {summary.needsReview === 1 ? "order needs" : "orders need"} a check in Orders.</strong></>}
     </p>

@@ -29,6 +29,8 @@ export interface FulfillmentInput {
   provider: string;
   trackingReference: string;
   note: string;
+  /** Pay on delivery only: the admin says the money was handed over. Required to mark such an order Delivered. */
+  cashReceived: boolean;
 }
 
 export const emptyFulfillment: Fulfillment = {
@@ -67,9 +69,10 @@ export function requiresTrackingReference(status: FulfillmentStatus): boolean {
  * "delivered", which is final.
  */
 export function fulfillmentTransition(
-  paymentStatus: string, current: FulfillmentStatus, next: FulfillmentStatus,
+  paymentStatus: string, current: FulfillmentStatus, next: FulfillmentStatus, codConfirmed = false,
 ): FulfillmentEventKind | null {
-  if (paymentStatus !== "paid") return null;
+  // Delivery starts once the money is in, or a pay-on-delivery order has been confirmed by phone.
+  if (paymentStatus !== "paid" && !(paymentStatus === "pay_on_delivery" && codConfirmed)) return null;
   const from = fulfillmentIndex(current);
   const to = fulfillmentIndex(next);
   if (from < 0 || to < 0) return null;
@@ -120,7 +123,7 @@ export function parseFulfillmentInput(value: unknown): FulfillmentInput {
   if (requiresTrackingReference(status) && (!provider || !trackingReference)) {
     throw new FulfillmentInputError("Add a delivery provider and tracking reference before dispatch");
   }
-  return { status, provider, trackingReference, note };
+  return { status, provider, trackingReference, note, cashReceived: input.cashReceived === true };
 }
 
 // A short, readable order number shown to customers, for example VG-7K2M9QXA.
@@ -238,12 +241,17 @@ export function publicTrackingView(order: {
   deliveryFeeMinor?: number;
   totalMinor?: number;
   delivery?: { zoneLabel?: string };
+  paymentMethod?: string;
+  codConfirmedAt?: string | null;
+  cancelledAt?: string | null;
 }, events: Pick<FulfillmentEvent, "status" | "at">[]) {
   const fulfillment = order.fulfillment ?? emptyFulfillment;
-  const paid = order.status === "paid";
+  const cod = order.paymentMethod === "cash_on_delivery";
+  // Delivery steps show once the money is in, or once a pay-on-delivery order is confirmed.
+  const paid = order.status === "paid" || (order.status === "pay_on_delivery" && Boolean(order.codConfirmedAt));
   const showTracking = paid && requiresTrackingReference(fulfillment.status);
   const updates = paid ? publicMilestones(events) : [];
-  const latest = [order.createdAt, order.paidAt, ...updates.map((update) => update.at)]
+  const latest = [order.createdAt, order.paidAt, order.codConfirmedAt, order.cancelledAt, ...updates.map((update) => update.at)]
     .filter((value): value is string => typeof value === "string")
     .reduce((newest, value) => (Date.parse(value) > Date.parse(newest) ? value : newest), order.createdAt);
   const items: PublicTrackingItem[] = (order.lines ?? []).map((line) => ({
@@ -252,6 +260,12 @@ export function publicTrackingView(order: {
   return {
     orderId: shortOrderCode(order.reference) ?? order.reference,
     paymentStatus: order.status,
+    paymentMethod: cod ? "cash_on_delivery" : "paystack",
+    // Pay on delivery: still waiting for the phone call, and what to hand over when it arrives.
+    awaitingConfirmation: order.status === "pay_on_delivery" && !order.codConfirmedAt,
+    confirmedAt: order.codConfirmedAt ?? null,
+    amountDueMinor: order.status === "pay_on_delivery" ? order.totalMinor ?? null : null,
+    cancelledAt: order.status === "cancelled" ? order.cancelledAt ?? null : null,
     placedAt: order.createdAt,
     paidAt: order.paidAt,
     fulfillmentStatus: paid ? fulfillment.status : "unfulfilled",

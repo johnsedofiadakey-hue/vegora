@@ -14,6 +14,13 @@ type Stage = "unfulfilled" | "preparing" | "dispatched" | "delivered";
 type TrackingResult = {
   orderId: string;
   paymentStatus: string;
+  paymentMethod?: string;
+  /** Pay on delivery: waiting for our phone call. */
+  awaitingConfirmation?: boolean;
+  confirmedAt?: string | null;
+  /** Pay on delivery: what to hand over when the order arrives. */
+  amountDueMinor?: number | null;
+  cancelledAt?: string | null;
   placedAt: string;
   paidAt: string | null;
   fulfillmentStatus: Stage;
@@ -53,12 +60,16 @@ const statusDetail: Record<Stage, string> = {
 const refreshEveryMs = 60_000;
 
 function unpaidHeading(paymentStatus: string) {
+  if (paymentStatus === "pay_on_delivery") return "We will call you to confirm";
+  if (paymentStatus === "cancelled") return "This order was cancelled";
   if (paymentStatus === "review_required") return "We are checking your payment";
   if (paymentStatus === "failed" || paymentStatus === "expired") return "Payment did not work";
   return "We are waiting for your payment";
 }
 
-function unpaidDetail(paymentStatus: string) {
+function unpaidDetail(paymentStatus: string, amountDue?: number | null) {
+  if (paymentStatus === "pay_on_delivery") return `We have your order. We will call the phone number you gave to confirm it, so please keep your phone on.${amountDue ? ` You will pay ${formatMoney(amountDue)} to the rider when it arrives.` : ""} If we cannot reach you within 2 days, the order is cancelled.`;
+  if (paymentStatus === "cancelled") return "Nothing will be sent and you will not be asked to pay. If this is a mistake, contact VEGORA with your order number.";
   if (paymentStatus === "failed" || paymentStatus === "expired") return "This order was not paid, so nothing will be sent. If money left your account, contact VEGORA with your order number. If not, you can order again from your cart.";
   if (paymentStatus === "review_required") return "We are checking this payment. Contact VEGORA with your order number if you need help.";
   return "We have not seen your payment yet. This page checks again by itself. If you paid and nothing changes in a few minutes, contact VEGORA with your order number.";
@@ -160,9 +171,11 @@ export function TrackOrderPage() {
     try { await navigator.clipboard.writeText(trackLink(window.location.origin, tracking.orderId)); setLinkCopied(true); window.setTimeout(() => setLinkCopied(false), 3000); } catch { /* The address bar still has it. */ }
   }
 
-  const paid = tracking?.paymentStatus === "paid";
+  // Progress shows once the money is in, or once a pay-on-delivery order is confirmed.
+  const paid = tracking?.paymentStatus === "paid" || (tracking?.paymentStatus === "pay_on_delivery" && tracking.awaitingConfirmation === false);
+  const payOnArrival = tracking?.paymentStatus === "pay_on_delivery" && paid;
   const stageIndex = tracking ? stages.findIndex((stage) => stage.id === tracking.fulfillmentStatus) : -1;
-  const stageTime = (id: Stage) => id === "unfulfilled" ? tracking?.paidAt ?? null : tracking?.updates.find((update) => update.status === id)?.at ?? null;
+  const stageTime = (id: Stage) => id === "unfulfilled" ? tracking?.paidAt ?? tracking?.confirmedAt ?? null : tracking?.updates.find((update) => update.status === id)?.at ?? null;
 
   return <div className="track-page section-pad">
     <div className="track-intro"><span className="eyebrow">VEGORA / YOUR ORDER</span><h1>Where is my order?</h1><p>Type your order number and the phone number you used when you ordered. You can check as many times as you like.</p></div>
@@ -185,7 +198,10 @@ export function TrackOrderPage() {
         {!tracking ? <div className="track-empty"><span>ORDER PROGRESS</span><h2>See where<br /><em>your order is.</em></h2><p>You see your order number right after you pay. We do not send emails or texts, so take a screenshot of it. Then come back here to see when your order is packed, sent and delivered.</p></div> : <>
           <span className="eyebrow">ORDER {tracking.orderId}</span>
           <h2>{paid ? statusCopy[tracking.fulfillmentStatus] : unpaidHeading(tracking.paymentStatus)}</h2>
-          <p className="track-status-copy">{paid ? statusDetail[tracking.fulfillmentStatus] : unpaidDetail(tracking.paymentStatus)}</p>
+          <p className="track-status-copy">{payOnArrival && tracking.fulfillmentStatus === "unfulfilled" ? `Your order is confirmed. You will pay ${tracking.amountDueMinor ? formatMoney(tracking.amountDueMinor) : "the total"} to the rider when it arrives. This page will change as your order moves on.`
+            : payOnArrival && tracking.fulfillmentStatus === "dispatched" ? `${statusDetail.dispatched} Please have ${tracking.amountDueMinor ? formatMoney(tracking.amountDueMinor) : "the money"} ready.`
+            : paid ? statusDetail[tracking.fulfillmentStatus] : unpaidDetail(tracking.paymentStatus, tracking.amountDueMinor)}</p>
+          {tracking.amountDueMinor ? <div className="track-reference"><span>TO PAY WHEN IT ARRIVES</span><strong>{formatMoney(tracking.amountDueMinor)}</strong><small>Cash or mobile money to the rider</small></div> : null}
 
           {paid && <ol className="track-steps" aria-label="Order progress">{stages.map((stage, index) => {
             const at = stageTime(stage.id);
@@ -201,7 +217,7 @@ export function TrackOrderPage() {
             <ul>{tracking.items.map((item, index) => <li key={`${item.name}-${item.size}-${index}`}><span>{item.name}<small>Size {item.size} · Qty {item.quantity}</small></span><strong>{formatMoney(item.lineTotalMinor)}</strong></li>)}</ul>
             {tracking.totalMinor !== null && <dl>{tracking.subtotalMinor !== null && <div><dt>Subtotal</dt><dd>{formatMoney(tracking.subtotalMinor)}</dd></div>}{tracking.discountMinor > 0 && <div><dt>Voucher</dt><dd>−{formatMoney(tracking.discountMinor)}</dd></div>}{tracking.deliveryFeeMinor !== null && <div><dt>Delivery</dt><dd>{formatMoney(tracking.deliveryFeeMinor)}</dd></div>}<div><dt>Total</dt><dd>{formatMoney(tracking.totalMinor)}</dd></div></dl>}</div>}
 
-          <ol className="track-timeline"><li><strong>You ordered</strong><span>{dateLabel(tracking.placedAt)}</span></li>{tracking.paidAt && <li><strong>Payment received</strong><span>{dateLabel(tracking.paidAt)}</span></li>}{tracking.updates.map((update, index) => <li key={`${update.at}-${index}`}><strong>{statusCopy[update.status as Stage] ?? update.status.replaceAll("_", " ")}</strong><span>{dateLabel(update.at)}</span></li>)}</ol>
+          <ol className="track-timeline"><li><strong>You ordered</strong><span>{dateLabel(tracking.placedAt)}</span></li>{tracking.confirmedAt && <li><strong>Order confirmed</strong><span>{dateLabel(tracking.confirmedAt)}</span></li>}{tracking.paidAt && <li><strong>{tracking.paymentMethod === "cash_on_delivery" ? "Paid on delivery" : "Payment received"}</strong><span>{dateLabel(tracking.paidAt)}</span></li>}{tracking.cancelledAt && <li><strong>Order cancelled</strong><span>{dateLabel(tracking.cancelledAt)}</span></li>}{tracking.updates.map((update, index) => <li key={`${update.at}-${index}`}><strong>{statusCopy[update.status as Stage] ?? update.status.replaceAll("_", " ")}</strong><span>{dateLabel(update.at)}</span></li>)}</ol>
 
           <div className="track-tools">
             <button type="button" onClick={() => current.current && void run(current.current.reference, current.current.contact, true)} disabled={loading}><RefreshCw size={14} aria-hidden="true" /> {loading ? "Checking…" : "Check for news"}</button>

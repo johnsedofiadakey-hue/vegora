@@ -36,6 +36,9 @@ export interface SalesSummary {
   vouchersUsed: number;
   /** Checkouts started in the period that were never paid (abandoned, failed or expired). */
   unpaidCheckouts: number;
+  /** Pay-on-delivery orders still open right now (not for the period): how many, and how much cash to collect. */
+  codOpen: number;
+  codOpenMinor: number;
   /** Paid orders waiting for a manual check. Not counted as sales. */
   needsReview: number;
   /** The same figure for the period just before, for comparison; null for "this month". */
@@ -82,11 +85,13 @@ export function summarizeSales(orders: InsightsOrder[], period: InsightsPeriod, 
   const areas = new Map<string, RankedRow>();
   const summary: SalesSummary = {
     salesMinor: 0, orders: 0, averageMinor: 0, pieces: 0, deliveryFeesMinor: 0, discountsMinor: 0, vouchersUsed: 0,
-    unpaidCheckouts: 0, needsReview: 0, previousSalesMinor: previousStart === null ? null : 0, topProducts: [], topSizes: [], areas: [],
+    unpaidCheckouts: 0, codOpen: 0, codOpenMinor: 0, needsReview: 0, previousSalesMinor: previousStart === null ? null : 0, topProducts: [], topSizes: [], areas: [],
   };
 
   for (const order of orders) {
     const created = time(order.createdAt);
+    // Open pay-on-delivery orders are cash still to collect, whatever the period. They are not sales yet.
+    if (order.status === "pay_on_delivery") { summary.codOpen += 1; summary.codOpenMinor += order.totalMinor; continue; }
     if (order.status === "paid") {
       const paid = time(order.paidAt ?? order.createdAt);
       if (previousStart !== null && inRange(paid, previousStart, start)) summary.previousSalesMinor! += order.totalMinor;

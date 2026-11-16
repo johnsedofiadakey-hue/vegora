@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { CodSettings } from "../delivery";
 import { ServerConfigError } from "./firebase-admin";
 
 export interface DeliveryZone {
@@ -8,6 +9,8 @@ export interface DeliveryZone {
   region: string;
   cities?: string[];
   feeMinor: number;
+  /** Customers here may choose to pay on delivery (when the shop-wide switch is on too). */
+  cod?: boolean;
 }
 
 export type PaymentMode = "test" | "live";
@@ -17,6 +20,8 @@ export interface CheckoutConfig {
   mode: PaymentMode;
   siteUrl: string;
   zones: DeliveryZone[];
+  /** Pay-on-delivery switch and order limit. Off unless the admin turned it on. */
+  cod: CodSettings;
 }
 
 // A live key is only accepted when VEGORA_PAYSTACK_MODE=live is also set, so
@@ -31,7 +36,7 @@ export function paymentConfig(): { secretKey: string; mode: PaymentMode } {
 }
 
 /** Everything checkout needs except the delivery areas, which come from the admin (or the server setting). */
-export function checkoutBase(): Omit<CheckoutConfig, "zones"> {
+export function checkoutBase(): Omit<CheckoutConfig, "zones" | "cod"> {
   const { secretKey, mode } = paymentConfig();
   const siteUrl = process.env.VEGORA_SITE_URL ?? "";
   if (process.env.VEGORA_CHECKOUT_ENABLED !== "true" ||

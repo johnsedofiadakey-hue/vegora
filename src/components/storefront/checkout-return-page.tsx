@@ -23,7 +23,7 @@ function reportPurchase(reference: string) {
   } catch { /* tracking is optional */ }
 }
 
-type OrderStatus = "initializing" | "pending_payment" | "paid" | "failed" | "expired" | "review_required";
+type OrderStatus = "initializing" | "pending_payment" | "pay_on_delivery" | "paid" | "failed" | "expired" | "cancelled" | "review_required";
 
 function clearPaidSelection(reference: string) {
   try {
@@ -52,9 +52,10 @@ export function CheckoutReturnPage() {
       .then(async (response) => {
         if (!response.ok) throw new Error("Verification unavailable");
         const data = await response.json() as { status?: OrderStatus };
-        if (!data.status || !["initializing", "pending_payment", "paid", "failed", "expired", "review_required"].includes(data.status)) throw new Error("Verification unavailable");
+        if (!data.status || !["initializing", "pending_payment", "pay_on_delivery", "paid", "failed", "expired", "cancelled", "review_required"].includes(data.status)) throw new Error("Verification unavailable");
         setStatus(data.status);
-        if (data.status === "paid") {
+        // A pay-on-delivery order is placed now (paid later), so it is saved and counted the same way.
+        if (data.status === "paid" || data.status === "pay_on_delivery") {
           clearPaidSelection(ref);
           reportPurchase(ref);
           try { window.sessionStorage.setItem("vegora-last-order-reference", ref); } catch { /* Manual entry remains available. */ }
@@ -77,6 +78,8 @@ export function CheckoutReturnPage() {
   }, []);
   const copy = {
     checking: ["Checking your payment", "Please wait. We are asking Paystack if your payment worked."],
+    pay_on_delivery: ["Thank you. We have your order.", "You will pay when your order arrives. We will call you on the number you gave to confirm it, so please keep your phone on. Your order number is below. Save it. You can use it to see where your order is at any time."],
+    cancelled: ["This order was cancelled", "Your order was cancelled. If this is a mistake, please contact VEGORA with your order number."],
     paid: ["Thank you. Your order is confirmed.", "Your payment worked. Your order number is below. Save it. You can use it to see where your order is at any time."],
     pending_payment: ["We are still waiting for your payment", "We have not seen your payment yet. Please check again in a minute, or contact us with your order number."],
     initializing: ["We are still waiting for your payment", "We have not seen your payment yet. Please check again in a minute, or contact us with your order number."],
@@ -85,13 +88,13 @@ export function CheckoutReturnPage() {
     review_required: ["We need to check your payment", "Please contact VEGORA with your order number. We will check your payment and tell you."],
     error: ["We could not check your payment", "Please contact VEGORA with your order number before you order again."],
   }[status];
-  return <div className="checkout-return section-pad"><span className="eyebrow">VEGORA / ORDER STATUS</span><h1>{copy[0]}</h1><p>{copy[1]}</p>{reference && shortOrderCode(reference) && ["paid", "pending_payment", "initializing", "review_required"].includes(status) && <OrderNumberCard code={shortOrderCode(reference) as string} remembered={remembered} onForget={() => {
+  return <div className="checkout-return section-pad"><span className="eyebrow">VEGORA / ORDER STATUS</span><h1>{copy[0]}</h1><p>{copy[1]}</p>{reference && shortOrderCode(reference) && ["paid", "pay_on_delivery", "pending_payment", "initializing", "review_required"].includes(status) && <OrderNumberCard code={shortOrderCode(reference) as string} remembered={remembered} onForget={() => {
       try { const code = shortOrderCode(reference) as string; window.localStorage.setItem(savedOrdersKey, JSON.stringify(removeSavedOrder(parseSavedOrders(window.localStorage.getItem(savedOrdersKey)), code))); } catch { /* Nothing to forget. */ }
       setRemembered(false);
     }} />}
-    {reference && ["error", "failed", "expired"].includes(status) && <p className="checkout-reference">Order number <strong>{shortOrderCode(reference) ?? reference}</strong></p>}
+    {reference && ["error", "failed", "expired", "cancelled"].includes(status) && <p className="checkout-reference">Order number <strong>{shortOrderCode(reference) ?? reference}</strong></p>}
     {(status === "pending_payment" || status === "initializing") && <button type="button" className="outline-button" onClick={() => window.location.reload()}>Check again</button>}
-    {status === "paid" && <Link href="/track" className="line-link">Track your order <ArrowUpRight size={16} /></Link>}
-    {status !== "checking" && <Link href={status === "paid" ? "/" : "/cart"} className="line-link">{status === "paid" ? "Back to home" : "Back to cart"} <ArrowUpRight size={16} /></Link>}
+    {(status === "paid" || status === "pay_on_delivery") && <Link href="/track" className="line-link">Track your order <ArrowUpRight size={16} /></Link>}
+    {status !== "checking" && <Link href={status === "paid" || status === "pay_on_delivery" ? "/" : "/cart"} className="line-link">{status === "paid" || status === "pay_on_delivery" ? "Back to home" : "Back to cart"} <ArrowUpRight size={16} /></Link>}
   </div>;
 }

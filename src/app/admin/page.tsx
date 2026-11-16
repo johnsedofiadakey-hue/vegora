@@ -13,7 +13,7 @@ import { VouchersPanel } from "./vouchers-panel";
 import { InsightsPanel } from "./insights-panel";
 import { StudioNav, type StudioView } from "./studio-nav";
 import { ProductEditor, ProductGrid } from "./products-view";
-import { OrdersView, needsDelivery, type AdminOrder } from "./orders-view";
+import { OrdersView, needsAttention, type AdminOrder } from "./orders-view";
 import type { FulfillmentEvent, FulfillmentInput } from "@/lib/fulfillment";
 import styles from "./admin.module.css";
 import studio from "./studio.module.css";
@@ -124,6 +124,20 @@ export default function AdminPage() {
       setMessage("Delivery update saved.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save delivery update");
+    } finally { setBusy(false); }
+  }
+
+  async function codAction(reference: string, action: "confirm" | "cancel", reason?: string) {
+    setBusy(true); setMessage("");
+    try {
+      const result = await adminFetch(`/api/admin/orders/${encodeURIComponent(reference)}/cod`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, reason }),
+      });
+      setOrders((current) => current.map((order) => order.reference === reference ? result.order : order));
+      setOrderEvents(result.events ?? []);
+      setMessage(action === "confirm" ? "Order confirmed. You can start preparing it." : "Order cancelled. The stock is back on sale.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "That did not work");
     } finally { setBusy(false); }
   }
 
@@ -248,7 +262,7 @@ export default function AdminPage() {
 
   return <main className={`${styles.shell} ${studio.app}`}>
     <StudioNav view={view} onSelect={selectView} open={menuOpen} onOpenChange={setMenuOpen}
-      ordersToHandle={orders.filter(needsDelivery).length} email={user.email ?? ""} onSignOut={() => void signOut(auth)} />
+      ordersToHandle={orders.filter(needsAttention).length} email={user.email ?? ""} onSignOut={() => void signOut(auth)} />
     <div className={studio.main}>
       {view === "insights" && <InsightsPanel orders={orders} truncated={ordersTruncated} busy={busy} onRefresh={() => void loadOrders()} />}
       {view === "products" && (productOpen
@@ -258,7 +272,7 @@ export default function AdminPage() {
           <ProductGrid products={products} busy={busy} onSelect={selectProduct} onNew={newProduct} onImport={() => void importPreviewProducts()} /></>)}
       {view === "orders" && <OrdersView orders={orders} products={products} selected={selectedOrder} detailOpen={orderDetailOpen} events={orderEvents}
         message={message} busy={busy} onSelect={(reference) => void selectOrder(reference)} onBack={() => setOrderDetailOpen(false)}
-        onRefresh={() => void loadOrders()} onSaveFulfillment={saveFulfillment} />}
+        onRefresh={() => void loadOrders()} onSaveFulfillment={saveFulfillment} onCodAction={codAction} />}
       {contentVisited && <div hidden={view !== "content"}><ContentEditor adminFetch={adminFetch} /></div>}
       {signupsVisited && <div hidden={view !== "signups"}><SignupsPanel adminFetch={adminFetch} /></div>}
       {vouchersVisited && <div hidden={view !== "vouchers"}><VouchersPanel adminFetch={adminFetch} /></div>}

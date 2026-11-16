@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 // Every new checkout holds stock for 30 minutes, so starting them is limited.
 const perContact = createRateLimiter({ limit: 5, windowMs: 10 * 60_000 });
 const perCaller = createRateLimiter({ limit: 12, windowMs: 10 * 60_000 });
+// Pay-on-delivery orders hold stock for up to two days without any online payment, so they get a tighter brake.
+const perCallerCod = createRateLimiter({ limit: 5, windowMs: 60 * 60_000 });
 // Trying vouchers at checkout counts against the same brake as the voucher check page.
 const perCallerVoucher = createRateLimiter({ limit: 20, windowMs: 10 * 60_000 });
 
@@ -23,9 +25,18 @@ export async function POST(request: Request) {
       const voucherTry = perCallerVoucher.check(clientAddress(request));
       if (!voucherTry.ok) return rateLimited(voucherTry.retryAfterSeconds);
     }
+    if (input.paymentMethod === "cash_on_delivery") {
+      const codTry = perCallerCod.check(clientAddress(request));
+      if (!codTry.ok) return rateLimited(codTry.retryAfterSeconds);
+    }
     const contact = perContact.check(input.email);
     if (!contact.ok) return rateLimited(contact.retryAfterSeconds);
     const { order, created } = await reserveOrder(input, config);
+    // Pay on delivery: nothing to pay online. The order is placed and waits for the admin's confirmation call.
+    if (order.paymentMethod === "cash_on_delivery") {
+      return Response.json({ orderId: order.reference, reference: order.reference, cod: true },
+        { status: created ? 201 : 200, headers: { "Cache-Control": "no-store" } });
+    }
     if (!created) {
       if (order.status === "pending_payment" && order.authorizationUrl && new Date().toISOString() < order.reservationExpiresAt) {
         return Response.json({ orderId: order.reference, reference: order.reference, authorizationUrl: order.authorizationUrl },

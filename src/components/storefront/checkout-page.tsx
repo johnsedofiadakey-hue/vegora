@@ -8,8 +8,9 @@ import { formatMoney } from "./catalog-types";
 import { cedis, trackPixel } from "@/lib/meta-pixel";
 import { newCheckoutKey } from "@/lib/checkout-key";
 
-type Zone = { id: string; label: string; region: string; cities: string[] | null; feeMinor: number };
-type CheckoutResult = { authorizationUrl?: string; reference?: string; error?: string };
+type Zone = { id: string; label: string; region: string; cities: string[] | null; feeMinor: number; cod?: boolean };
+type CheckoutResult = { authorizationUrl?: string; reference?: string; cod?: boolean; error?: string };
+type PayMethod = "paystack" | "cash_on_delivery";
 
 export function CheckoutPage() {
   const [items, setItems] = useState<BagItem[]>([]);
@@ -20,6 +21,9 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   // Vouchers: the browser only keeps the code the customer typed. The server works out the discount again when the order is made.
+  // How to pay. Pay on delivery shows only where the owner allowed it; the server checks again.
+  const [method, setMethod] = useState<PayMethod>("paystack");
+  const [codMaxMinor, setCodMaxMinor] = useState(0);
   const [vouchersOn, setVouchersOn] = useState(false);
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucherInput, setVoucherInput] = useState("");
@@ -38,10 +42,11 @@ export function CheckoutPage() {
     fetch("/api/checkout/zones", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
-        const data = await response.json() as { zones?: Zone[]; vouchers?: boolean };
+        const data = await response.json() as { zones?: Zone[]; vouchers?: boolean; cod?: { enabled?: boolean; maxOrderMinor?: number } };
         if (!Array.isArray(data.zones) || !data.zones.length) return;
         setZones(data.zones);
         setVouchersOn(data.vouchers === true);
+        setCodMaxMinor(data.cod?.enabled && typeof data.cod.maxOrderMinor === "number" ? data.cod.maxOrderMinor : 0);
         // Never pick an area for the customer when there is a choice: the delivery
         // price depends on it, and a quiet default could be paid for by mistake.
         if (data.zones.length === 1) setZoneId(data.zones[0].id);
@@ -57,6 +62,11 @@ export function CheckoutPage() {
   const delivery = zone ? zone.feeMinor : null;
   const discount = voucher ? voucher.discountMinor : 0;
   const supportedBag = items.every((item) => item.currency === "GHS" && item.quantity <= 10);
+  const total = subtotal - discount + (delivery ?? 0);
+  // Pay on delivery is offered only in areas the owner ticked, and only up to the owner's limit.
+  const codHere = zone?.cod === true && codMaxMinor > 0;
+  const codTooBig = codHere && total > codMaxMinor;
+  const payOnDelivery = method === "cash_on_delivery" && codHere && !codTooBig;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,6 +81,7 @@ export function CheckoutPage() {
       items: items.map(({ slug, variantId, quantity }) => ({ slug, variantId, quantity })),
       idempotencyKey: newCheckoutKey(window.crypto),
       ...(voucher ? { voucherCode: voucher.code } : {}),
+      ...(payOnDelivery ? { paymentMethod: "cash_on_delivery" } : {}),
     };
     try {
       const response = await fetch("/api/checkout", {
@@ -78,8 +89,18 @@ export function CheckoutPage() {
         body: JSON.stringify(payload), cache: "no-store",
       });
       const result = await response.json() as CheckoutResult;
-      if (!response.ok || !result.authorizationUrl) throw new Error(result.error || "We could not start your order. Please try again.");
-      const destination = new URL(result.authorizationUrl);
+      if (!response.ok || (!result.authorizationUrl && !result.cod)) throw new Error(result.error || "We could not start your order. Please try again.");
+      if (result.cod) {
+        // Pay on delivery: the order is placed. Go to the page that shows the order number.
+        if (!result.reference || !/^VG-[0-9a-f]{32}$/.test(result.reference)) throw new Error("We could not check your order. Please contact VEGORA.");
+        window.sessionStorage.setItem(`vegora-checkout-v1:${result.reference}`, JSON.stringify(items.map(({ key, quantity }) => ({ key, quantity }))));
+        window.sessionStorage.setItem(`vegora-checkout-contact:${result.reference}`, phone);
+        window.sessionStorage.setItem(`vegora-checkout-pixel:${result.reference}`, JSON.stringify({
+          value: subtotal - discount + (delivery ?? 0), ids: items.map((item) => item.slug), count: items.reduce((sum, item) => sum + item.quantity, 0) }));
+        window.location.assign(new URL(`/checkout/return?reference=${encodeURIComponent(result.reference)}`, window.location.origin).toString());
+        return;
+      }
+      const destination = new URL(result.authorizationUrl as string);
       if (destination.protocol !== "https:" || !(destination.hostname === "paystack.com" || destination.hostname.endsWith(".paystack.com"))) {
         throw new Error("We could not check the payment page. Please contact VEGORA.");
       }
@@ -130,8 +151,17 @@ export function CheckoutPage() {
             <div className="checkout-zones" role="radiogroup" aria-label="Delivery area">{zones.map((entry) => <label key={entry.id} className="checkout-zone" data-selected={entry.id === zoneId}><input type="radio" name="zone" value={entry.id} checked={entry.id === zoneId} onChange={() => setZoneId(entry.id)} required /><span>Delivery in {entry.label}</span><strong>{formatMoney(entry.feeMinor)}</strong></label>)}</div>
             <label>Delivery address<textarea name="addressLine1" rows={3} required maxLength={300} placeholder="House number, street, area, and a place we can find easily" autoComplete="street-address" /></label>
           </fieldset>
-          <p className="checkout-assurance">You pay safely with Paystack. We only accept your order after the payment works.</p>
-          <p className="checkout-save-note"><b>Please read:</b> after you pay, you will see an order number. We do not send emails or texts, so take a screenshot of it. You need this number and your phone number to track your order on this website.</p>
+          {codHere && <fieldset><legend>3. How do you want to pay?</legend>
+            <div className="checkout-zones" role="radiogroup" aria-label="How to pay">
+              <label className="checkout-zone" data-selected={!payOnDelivery}><input type="radio" name="pay" checked={!payOnDelivery} onChange={() => setMethod("paystack")} /><span>Pay now, online</span><strong>Card or mobile money</strong></label>
+              <label className="checkout-zone" data-selected={payOnDelivery}><input type="radio" name="pay" checked={payOnDelivery} disabled={codTooBig} onChange={() => setMethod("cash_on_delivery")} /><span>Pay when it arrives</span><strong>Cash or mobile money</strong></label>
+            </div>
+            {codTooBig && <small className="checkout-hint">Pay on delivery is for orders up to {formatMoney(codMaxMinor)}. Your order costs more, so please pay online.</small>}
+          </fieldset>}
+          {payOnDelivery
+            ? <p className="checkout-assurance">You pay the rider when your order arrives. Before we send it, we will call the number above to confirm your order, so please keep your phone on. Orders we cannot reach you about are cancelled after 2 days.</p>
+            : <p className="checkout-assurance">You pay safely with Paystack. We only accept your order after the payment works.</p>}
+          <p className="checkout-save-note"><b>Please read:</b> {payOnDelivery ? "after you place your order" : "after you pay"}, you will see an order number. We do not send emails or texts, so take a screenshot of it. You need this number and your phone number to track your order on this website.</p>
           {error && <p className="checkout-error" role="alert">{error}</p>}
         </form>
         <aside className="checkout-summary"><span className="eyebrow">YOUR ORDER</span><h2>Summary</h2>
@@ -147,9 +177,9 @@ export function CheckoutPage() {
                 : <button type="button" className="checkout-voucher-toggle" onClick={() => setVoucherOpen(true)}>Have a voucher?</button>}
           </div>}
           <div className="checkout-totals"><div><span>Clothes</span><strong>{formatMoney(subtotal)}</strong></div>{voucher && <div><span>Voucher</span><strong>−{formatMoney(discount)}</strong></div>}<div><span>Delivery</span><strong>{delivery === null ? "Choose an area" : formatMoney(delivery)}</strong></div><div className="checkout-grand-total"><span>{delivery === null ? "Total so far" : "Total"}</span><strong>{formatMoney(subtotal - discount + (delivery ?? 0))}</strong></div></div>
-          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? "Opening Paystack…" : "Pay with Paystack"} <ArrowUpRight size={16} /></button>
+          <button form="checkout-form" type="submit" disabled={submitting || !supportedBag || !zone}>{submitting ? (payOnDelivery ? "Placing your order…" : "Opening Paystack…") : (payOnDelivery ? "Place order" : "Pay with Paystack")} <ArrowUpRight size={16} /></button>
           {!supportedBag && <p className="checkout-error">Something in your cart needs fixing. Please go back to your cart.</p>}
-          <p className="checkout-summary-note">We check the prices and stock again before you pay.</p>
+          <p className="checkout-summary-note">{payOnDelivery ? "We check the prices and stock again when you place your order." : "We check the prices and stock again before you pay."}</p>
         </aside>
       </div>}
   </div>;
