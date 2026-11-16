@@ -1,5 +1,15 @@
 # Public Firebase web configuration for the VEGORA App Hosting preview.
 # Live Paystack mode. Checkout opens only when all three switches (checkout, expiry job, webhook) are "true".
+# How the site runs. The cap on instances is a safety limit on the bill: without it a rush of visitors
+# (or a bot) can start up to 100 copies of the site. Five copies at 40 visitors each is far more than the
+# shop needs. Copies are started only when there are visitors, and the five-minute expiry job keeps one warm.
+runConfig:
+  minInstances: 0
+  maxInstances: 5
+  concurrency: 40
+  cpu: 1
+  memoryMiB: 512
+
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyCicY3zLGVy8t7d2Bd4O81d2oK6wcueclM

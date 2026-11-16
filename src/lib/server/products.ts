@@ -3,6 +3,7 @@ import "server-only";
 import type { Audience, Product, ProductInput, ProductTag, ProductVariant } from "../catalog";
 import { storeDb } from "./firebase-admin";
 import { HttpError } from "./http";
+import { forgetMemo, memo } from "./memo";
 
 const products = () => storeDb().collection("products");
 const validSlug = (slug: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
@@ -55,7 +56,17 @@ export async function getPublishedProduct(slug: string): Promise<Product | null>
   return data?.status === "published" && isAvailable(data) ? exposeProduct(data, false) : null;
 }
 
+// How long a list of products may be reused before asking the database again. Short, because stock changes.
+const listTtlMs = 30_000;
+// Whether any women's piece is on sale changes rarely, and the question is asked on every page view.
+const availabilityTtlMs = 120_000;
+const catalogTtlMs = 60_000;
+
 export async function listPublishedProducts(audience: Audience | null, limit: number): Promise<Product[]> {
+  return memo(`list:${audience ?? "all"}:${limit}`, listTtlMs, () => queryPublishedProducts(audience, limit));
+}
+
+async function queryPublishedProducts(audience: Audience | null, limit: number): Promise<Product[]> {
   let query = products().where("status", "==", "published");
   if (audience === "women" || audience === "men") {
     query = query.where("audience", "in", [audience, "unisex"]);
@@ -66,6 +77,10 @@ export async function listPublishedProducts(audience: Audience | null, limit: nu
 }
 
 export async function listTaggedProducts(tag: ProductTag, audience: Audience | null, limit: number): Promise<Product[]> {
+  return memo(`tag:${tag}:${audience ?? "all"}:${limit}`, listTtlMs, () => queryTaggedProducts(tag, audience, limit));
+}
+
+async function queryTaggedProducts(tag: ProductTag, audience: Audience | null, limit: number): Promise<Product[]> {
   let query = products().where("status", "==", "published").where("tags", "array-contains", tag);
   if (audience === "women" || audience === "men") {
     query = query.where("audience", "in", [audience, "unisex"]);
@@ -76,25 +91,41 @@ export async function listTaggedProducts(tag: ProductTag, audience: Audience | n
 }
 
 export async function hasAvailableProductsForAudience(audience: "women" | "men"): Promise<boolean> {
+  return memo(`available:${audience}`, availabilityTtlMs, () => queryAvailability(audience));
+}
+
+// Reads a few products at a time and stops at the first one on sale, so the usual answer costs a handful of
+// reads rather than the whole range.
+async function queryAvailability(audience: "women" | "men"): Promise<boolean> {
+  const pageSize = 10;
   let query = products().where("status", "==", "published")
     .where("audience", "in", [audience, "unisex"])
-    .orderBy("updatedAt", "desc").select("priceMinor", "images", "variants").limit(100);
+    .orderBy("updatedAt", "desc").select("priceMinor", "images", "variants").limit(pageSize);
   while (true) {
     const snap = await query.get();
     if (snap.docs.some((doc) => {
       const product = readStoredProduct(doc.data());
       return product && isAvailable(product);
     })) return true;
-    if (snap.size < 100) return false;
+    if (snap.size < pageSize) return false;
     query = query.startAfter(snap.docs[snap.docs.length - 1]);
   }
 }
 
+// Search looks through every published product. That whole list is read once a minute and shared by every
+// search, instead of being read again for each one.
+async function searchCatalog(): Promise<Product[]> {
+  return memo("search-catalog", catalogTtlMs, async () => {
+    const snap = await products().where("status", "==", "published").limit(500).get();
+    if (snap.size === 500) throw new HttpError(503, "Search needs a larger catalog index. Please browse collections for now");
+    return snap.docs.map((doc) => exposeProduct(readStoredProduct(doc.data())!, false));
+  });
+}
+
 export async function searchPublishedProducts(query: string, audience: Audience | null, limit: number): Promise<Product[]> {
-  const snap = await products().where("status", "==", "published").limit(500).get();
-  if (snap.size === 500) throw new HttpError(503, "Search needs a larger catalog index. Please browse collections for now");
+  const catalog = await searchCatalog();
   const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  return snap.docs.map((doc) => exposeProduct(readStoredProduct(doc.data())!, false))
+  return catalog
     .filter((product) => product.priceMinor !== null && product.images.length > 0 && product.variants.some((variant) => variant.stock > 0))
     .filter((product) => !audience || product.audience === audience || (audience !== "unisex" && product.audience === "unisex"))
     .filter((product) => {
@@ -131,6 +162,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     }
     throw error;
   }
+  forgetMemo();
   return exposeProduct(product, true);
 }
 
@@ -153,6 +185,7 @@ export async function updateProduct(slug: string, input: ProductInput): Promise<
     const product: StoredProduct = { ...input, id: slug, variants,
       createdAt: existing.createdAt, updatedAt: new Date().toISOString() };
     tx.set(ref, product);
+    forgetMemo();
     return exposeProduct(product, true);
   });
 }
@@ -166,6 +199,7 @@ export async function archiveProduct(slug: string): Promise<Product> {
     if (!existing) throw new HttpError(404, "Product not found");
     const product: StoredProduct = { ...existing, status: "archived", featured: false, updatedAt: new Date().toISOString() };
     tx.set(ref, product);
+    forgetMemo();
     return exposeProduct(product, true);
   });
 }

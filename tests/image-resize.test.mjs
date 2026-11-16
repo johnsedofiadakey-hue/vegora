@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { createImageCache, resizeToWebp } from "../src/lib/server/image-resize.ts";
+import { createImageCache, resizeToJpeg, resizeToWebp } from "../src/lib/server/image-resize.ts";
 
 const jpeg = (width, height, options = {}) => sharp({ create: { width, height, channels: 3, background: { r: 120, g: 30, b: 50 } } }).withMetadata(options).jpeg().toBuffer();
 
@@ -48,4 +48,16 @@ test("the cache forgets the least recently used photographs first", () => {
   assert.equal(counted.size, 3);
   assert.equal(counted.get("1"), undefined);
   assert.ok(counted.get("5"));
+});
+
+test("the same photograph can be made as a JPEG for older iPhones, with a white background behind transparency", async () => {
+  const see_through = await sharp({ create: { width: 400, height: 600, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer();
+  const out = await resizeToJpeg(see_through, 200, 75);
+  const info = await sharp(out).metadata();
+  assert.equal(info.format, "jpeg");
+  assert.equal(info.width, 200);
+  const corner = await sharp(out).extract({ left: 0, top: 0, width: 1, height: 1 }).raw().toBuffer();
+  assert.ok(corner[0] > 240 && corner[1] > 240 && corner[2] > 240);
+  const large = await jpeg(2400, 3200);
+  assert.ok((await resizeToJpeg(large, 640, 75)).length < large.length);
 });

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { isUploadedSource, parseImageRequest } from "@/lib/image-delivery";
 import { storeBucket } from "@/lib/server/firebase-admin";
-import { createImageCache, resizeToWebp } from "@/lib/server/image-resize";
+import { createImageCache, resizeToJpeg, resizeToWebp } from "@/lib/server/image-resize";
 
 export const runtime = "nodejs";
 
@@ -19,9 +19,10 @@ export async function GET(request: Request) {
   const image = parseImageRequest(new URL(request.url).searchParams);
   if (!image) return new Response("Unsupported image request", { status: 400 });
 
-  const key = `${image.src}|${image.width}|${image.quality}`;
+  const key = `${image.src}|${image.width}|${image.quality}|${image.format}`;
+  const outputType = image.format === "jpg" ? "image/jpeg" : "image/webp";
   const hit = recent.get(key);
-  if (hit) return photo(hit, "image/webp", forever);
+  if (hit) return photo(hit, outputType, forever);
 
   const extension = image.src.slice(image.src.lastIndexOf(".") + 1).toLowerCase();
   let original: Buffer;
@@ -42,9 +43,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const resized = await resizeToWebp(original, image.width, image.quality);
+    const resized = image.format === "jpg"
+      ? await resizeToJpeg(original, image.width, image.quality)
+      : await resizeToWebp(original, image.width, image.quality);
     recent.set(key, resized);
-    return photo(resized, "image/webp", forever);
+    return photo(resized, outputType, forever);
   } catch (error) {
     console.error("VEGORA image could not be resized; sending the original", image.src, error);
     return photo(original, types[extension] ?? "application/octet-stream", "public, max-age=300");

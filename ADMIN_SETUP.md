@@ -103,6 +103,19 @@ Added 16 November 2026. Plan and decisions: `PLAN_PAY_ON_DELIVERY.md`.
 - **Reports:** Insights counts an order as a sale only when it is `paid` (on the day cash was received). Open pay-on-delivery orders appear as "to collect". Cancelled and expired ones are not abandoned checkouts.
 - **Known limit:** the phone call is the only check on who ordered, and rate limits are per address as the server sees it. Unconfirmed orders expire, so a prank order costs a phone call, not stock.
 
+## Speed, caching and cost
+
+Added 17 November 2026.
+
+- **Pages:** storefront pages send `Cache-Control: public, max-age=0, s-maxage=60`, so the CDN in front of the site keeps each page for a minute. `/admin`, `/api/*`, `/_next/*`, `/track` and `/checkout` are excluded (the last two carry order numbers in their addresses). Set in `next.config.ts`.
+- **Short memory copies (`src/lib/server/memo.ts`):** product lists 30 s, search catalogue 60 s, women's availability 2 minutes, content blocks 2 minutes. Failures are never kept. Saving a product or placing an order clears the copy on that instance at once.
+- **Availability check:** `GET /api/storefront/availability` is cacheable (`max-age=60, s-maxage=120`) and the browser asks once per visit (again on tab focus after 5 minutes), not on every page change.
+- **Photographs:** `/api/image` answers WebP by default and JPEG with `&f=jpg`. The page-head script asks for JPEG on phones that cannot show WebP (Safari before 14) and when a photograph fails. Responses are `immutable` and the CDN keeps them.
+- **Money text** is written by hand (`formatMoney`, `formatGhs`), not with `Intl`, so server and phone match.
+- **Run settings (`apphosting.yaml` `runConfig`):** at most 5 instances, 40 requests each, 1 vCPU, 512 MiB, none kept running. The 5-minute expiry job keeps one instance warm. Without the cap Cloud Run may start up to 100 instances.
+- **Where the cost is:** Firestore reads were about 21,000 a day (the free allowance is 50,000), mostly the uptime check re-reading content blocks. Cloud Run and the build image store (about 180 MB) are inside free allowances at current traffic. See which numbers to watch: Cloud Monitoring `firestore.googleapis.com/document/read_count`.
+- **Visitor errors:** browser errors and failed files are logged as WARNING lines with `jsonPayload.event="client-error"`. Read them with `gcloud logging read 'resource.type="cloud_run_revision" AND jsonPayload.event="client-error"' --project vegoragh --freshness=7d`.
+
 ## Meta Pixel
 
 `NEXT_PUBLIC_META_PIXEL_ID` (set in `apphosting.yaml`, BUILD and RUNTIME; it is public) turns on the Meta Pixel for shop pages only (`src/components/storefront/meta-pixel.tsx` in the shop layout, never the admin). It sends `PageView` on every page and on each in-app page change, plus `ViewContent` (product page), `AddToCart` (product page or card), `AddToWishlist`, `InitiateCheckout` (checkout opened with a cart) and `Purchase` (once, on the confirmation page after Paystack reports `paid`, with the total shown at checkout and the order reference as `eventID`). Values are in GHS cedis. No name, phone, address or email is sent. Events raised before the script runs wait in `window.__vegoraPixelQueue` and are flushed by the base code. On product pages Meta sends events as a form POST (the page's Product JSON-LD makes them too large for an image request), so they do not show as `facebook.com/tr` images in DevTools. Leave the variable empty to switch the pixel off.

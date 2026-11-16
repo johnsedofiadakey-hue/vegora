@@ -13,6 +13,16 @@ export async function resizeToWebp(input: Uint8Array, width: number, quality: nu
     .toBuffer();
 }
 
+/** The same photograph as a JPEG, for browsers that cannot show WebP. A see-through background becomes white. */
+export async function resizeToJpeg(input: Uint8Array, width: number, quality: number): Promise<Buffer> {
+  return sharp(input, { failOn: "none", limitInputPixels: 60_000_000 })
+    .rotate()
+    .resize({ width, withoutEnlargement: true })
+    .flatten({ background: "#ffffff" })
+    .jpeg({ quality, progressive: true, mozjpeg: true })
+    .toBuffer();
+}
+
 export interface ImageCache {
   get(key: string): Buffer | undefined;
   set(key: string, value: Buffer): void;

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { CheckoutConfig, DeliveryZone } from "./checkout-config";
 import { storeDb } from "./firebase-admin";
 import { HttpError } from "./http";
+import { forgetMemo } from "./memo";
 import { readStoredProduct, type StoredProduct } from "./products";
 import type { PaystackVerification } from "./paystack";
 import { paymentAction, type OrderStatus } from "./payment-policy";
@@ -270,6 +271,10 @@ export async function reserveOrder(input: CheckoutInput, config: CheckoutConfig)
     tx.create(keyRef, { reference, fingerprint, createdAt: now.toISOString() });
     recordEvent(tx, order, cod ? "cod_placed" : "reserved", "initializing");
     return { order, created: true };
+  }).then((result) => {
+    // Stock just changed: the next product list or page on this copy of the site should read it fresh.
+    if (result.created) forgetMemo();
+    return result;
   });
 }
 

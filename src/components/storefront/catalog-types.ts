@@ -20,6 +20,14 @@ export type Product = {
   updatedAt: string;
 };
 
+// Written out by hand, not with Intl.NumberFormat: the server and every phone then print exactly the same
+// text. (A phone whose language data differs would otherwise print a different symbol than the page
+// the server sent, and the page would be rebuilt in the browser.)
 export function formatMoney(minor: number | null, currency = "GHS") {
-  return minor === null ? "Price unavailable" : new Intl.NumberFormat("en-GH", { style: "currency", currency }).format(minor / 100);
+  if (minor === null) return "Price unavailable";
+  const symbol = currency === "GHS" ? "GH₵" : `${currency} `;
+  const sign = minor < 0 ? "-" : "";
+  const abs = Math.abs(Math.round(minor));
+  const whole = String(Math.floor(abs / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${sign}${symbol}${whole}.${String(abs % 100).padStart(2, "0")}`;
 }

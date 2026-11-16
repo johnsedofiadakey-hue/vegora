@@ -7,9 +7,9 @@ import { withTimeout } from "./timeout";
 
 // The storefront renders per request, so a visitor never sees text frozen at
 // build time. To avoid a Firestore read on every page view, each instance keeps
-// a short-lived copy of each block. Publishing clears this instance's copy at
+// a copy of each block for two minutes. Publishing clears this instance's copy at
 // once; other instances pick the change up when their copy expires.
-const freshForMs = 30_000;
+const freshForMs = 120_000;
 // A page must never wait long on Firestore: past this it shows the last good text.
 const readTimeoutMs = 3_000;
 

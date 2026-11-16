@@ -27,7 +27,14 @@ export function snapWidth(requested: number): number {
   return imageWidths.find((width) => width >= requested) ?? imageWidths[imageWidths.length - 1];
 }
 
-export interface ImageRequest { src: string; width: number; quality: number }
+/**
+ * WebP is what almost every phone gets. Safari before version 14 (iPhone 6 and 7 stuck on iOS 12 or 13)
+ * cannot show WebP at all, so a small script in the page asks for the same photograph as a JPEG
+ * (the `f=jpg` part of the address) when WebP fails. See clientErrorScript in client-error.ts.
+ */
+export type ImageFormat = "webp" | "jpg";
+
+export interface ImageRequest { src: string; width: number; quality: number; format: ImageFormat }
 
 export function parseImageRequest(params: URLSearchParams): ImageRequest | null {
   const src = params.get("src") ?? "";
@@ -39,7 +46,9 @@ export function parseImageRequest(params: URLSearchParams): ImageRequest | null 
   const rawQuality = params.get("q");
   if (rawQuality !== null && !/^[0-9]{1,3}$/.test(rawQuality)) return null;
   const quality = rawQuality === null ? defaultQuality : Math.min(90, Math.max(40, Number(rawQuality)));
-  return { src, width: snapWidth(requested), quality };
+  const rawFormat = params.get("f");
+  if (rawFormat !== null && rawFormat !== "webp" && rawFormat !== "jpg") return null;
+  return { src, width: snapWidth(requested), quality, format: rawFormat === "jpg" ? "jpg" : "webp" };
 }
 
 /** What the browser asks for. Anything that cannot be resized is left as it is. */

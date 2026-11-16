@@ -47,8 +47,11 @@ export interface ProductInput {
   tags: ProductTag[];
 }
 
+// Written out by hand so every device prints exactly the same text as the server (see formatMoney).
 export function formatGhs(priceMinor: number | null): string {
-  return priceMinor === null
-    ? "Price on request"
-    : new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" }).format(priceMinor / 100);
+  if (priceMinor === null) return "Price on request";
+  const sign = priceMinor < 0 ? "-" : "";
+  const abs = Math.abs(Math.round(priceMinor));
+  const whole = String(Math.floor(abs / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${sign}GH₵${whole}.${String(abs % 100).padStart(2, "0")}`;
 }

@@ -29,8 +29,8 @@ test("a requested width is rounded up to a standard size, and never beyond the l
 });
 
 test("image requests are validated before anything is read", () => {
-  assert.deepEqual(parseImageRequest(query(`src=%2Fcatalog%2Fred-stripe.webp&w=600&q=80`)), { src: "/catalog/red-stripe.webp", width: 640, quality: 80 });
-  assert.deepEqual(parseImageRequest(query(`src=%2Fapi%2Fmedia%2F${uuid}.jpg&w=1000`)), { src: `/api/media/${uuid}.jpg`, width: 1080, quality: 75 });
+  assert.deepEqual(parseImageRequest(query(`src=%2Fcatalog%2Fred-stripe.webp&w=600&q=80`)), { src: "/catalog/red-stripe.webp", width: 640, quality: 80, format: "webp" });
+  assert.deepEqual(parseImageRequest(query(`src=%2Fapi%2Fmedia%2F${uuid}.jpg&w=1000`)), { src: `/api/media/${uuid}.jpg`, width: 1080, quality: 75, format: "webp" });
   assert.equal(parseImageRequest(query("src=%2Fcatalog%2Fred-stripe.webp&w=10&q=5")).quality, 40);
   assert.equal(parseImageRequest(query("src=%2Fcatalog%2Fred-stripe.webp&w=10&q=100")).quality, 90);
   for (const bad of ["", "w=640", "src=%2Fcatalog%2Fred-stripe.webp", "src=%2Fcatalog%2Fred-stripe.webp&w=0", "src=%2Fcatalog%2Fred-stripe.webp&w=-5",
@@ -47,5 +47,13 @@ test("the browser-side loader rewrites photographs and leaves everything else al
   assert.equal(imageUrl("https://example.com/x.png", 640), "https://example.com/x.png");
   // What the loader writes is exactly what the route accepts.
   const url = new URL(imageUrl(`/api/media/${uuid}.webp`, 700, 70), "https://a.example");
-  assert.deepEqual(parseImageRequest(url.searchParams), { src: `/api/media/${uuid}.webp`, width: 750, quality: 70 });
+  assert.deepEqual(parseImageRequest(url.searchParams), { src: `/api/media/${uuid}.webp`, width: 750, quality: 70, format: "webp" });
+});
+
+test("a JPEG can be asked for by older iPhones; any other format is refused", () => {
+  assert.equal(parseImageRequest(query("src=%2Fcatalog%2Fred-stripe.webp&w=640&q=75&f=jpg")).format, "jpg");
+  assert.equal(parseImageRequest(query("src=%2Fcatalog%2Fred-stripe.webp&w=640&q=75&f=webp")).format, "webp");
+  for (const bad of ["f=png", "f=avif", "f=", "f=JPG", "f=jpg%00"]) {
+    assert.equal(parseImageRequest(query(`src=%2Fcatalog%2Fred-stripe.webp&w=640&q=75&${bad}`)), null, bad);
+  }
 });
