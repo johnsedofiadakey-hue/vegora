@@ -40,7 +40,7 @@
 <main>
   <div class="brand">VEGORA</div>
   <h1>Admin guide: step by step</h1>
-  <p class="lead">How to change delivery prices, write your delivery and payment notes, and move orders along. Short steps in plain words.</p>
+  <p class="lead">How to change delivery prices, write your delivery and payment notes, take pay-on-delivery orders, and move orders along. Short steps in plain words.</p>
 
   <div class="plain">
     <strong>Open the admin</strong>
@@ -145,7 +145,37 @@
     <li>Tell them they can follow the order any time on the <b>Track order</b> page at the bottom of the shop, using the order number and their phone number.</li>
   </ol>
 
-  <h2><span>4</span>What you cannot change here</h2>
+  <h2><span>4</span>Pay on delivery (cash or mobile money to the rider)</h2>
+  <p class="when">Menu: <b>Delivery</b> to switch it on, <b>Orders</b> to handle each order. It is <b>off</b> until you switch it on.</p>
+
+  <h3>Switch it on</h3>
+  <ol>
+    <li>Tap <b class="btn">Delivery</b>. In the <b>Pay on delivery</b> box, tick the switch so it says <b>ON</b>.</li>
+    <li>Type the <b>Highest order amount</b> (for example <b>500</b>). Bigger orders must be paid online. The most you can enter is 2000.</li>
+    <li>In the list of areas, tick <b>Allow pay on delivery</b> only where your own riders deliver.</li>
+    <li>Tap <b class="btn">Save delivery areas</b>. Customers in those areas now see <b>How do you want to pay?</b> at checkout.</li>
+  </ol>
+
+  <h3>Handle each pay-on-delivery order</h3>
+  <ol>
+    <li>A new order appears in <b>Orders</b> marked <b>Call to confirm</b>. The number beside Orders goes up. <b>Do not pack it yet.</b></li>
+    <li>Tap the order. Ring the customer, check it was them, check the items and the address, and tell them how much they will pay.</li>
+    <li>Tap <b class="btn">Confirm order</b>. The delivery steps now unlock: <b>Preparing</b>, then <b>Dispatched</b> (enter the rider and a reference).</li>
+    <li>When the rider hands the order over and gets the money, choose <b>Delivered</b>, tick <b>I received GH₵… from the customer</b>, and tap <b class="btn">Save delivery update</b>. Only now does the order count as <b>Paid</b>.</li>
+    <li>If the customer refuses, cannot be reached or changes their mind, tap <b class="btn">Cancel order</b> and write why. The stock goes back on sale.</li>
+  </ol>
+  <div class="box">
+    <strong>Rules that protect you</strong>
+    <ul>
+      <li>An order you do not confirm within <b>2 days</b> is cancelled by the system, and the stock goes back on sale.</li>
+      <li>One phone number can have at most <b>2</b> pay-on-delivery orders open at a time.</li>
+      <li>Vouchers work too. The voucher counts as used only when the money is received.</li>
+      <li>The phone call is your only check that an order is real. If someone keeps ordering as a prank, cancel their orders and turn <b>Allow pay on delivery</b> off for that area until it stops.</li>
+      <li><b>Insights</b> shows how many pay-on-delivery orders are open and how much cash is still to collect.</li>
+    </ul>
+  </div>
+
+  <h2><span>5</span>What you cannot change here</h2>
   <table>
     <tr><th>Thing</th><th>What to do</th></tr>
     <tr><td>A customer's name, phone or address on an order</td><td>You can read them but not edit them. Write the correction in the <b>Internal note</b> and tell your rider.</td></tr>
@@ -153,7 +183,7 @@
     <tr><td>Checkout wording (for example "save your order number")</td><td>Ask your developer.</td></tr>
   </table>
 
-  <h2><span>5</span>If something looks wrong</h2>
+  <h2><span>6</span>If something looks wrong</h2>
   <table>
     <tr><th>Problem</th><th>What to do</th></tr>
     <tr><td>I saved, but the shop did not change</td><td>Website text needs <b>Publish</b>, not just Save draft. Then wait about 30 seconds and refresh.</td></tr>
@@ -163,7 +193,7 @@
     <tr><td>I cannot sign in</td><td>Check your email and password. If it still fails, ask your developer to reset it.</td></tr>
   </table>
 
-  <p class="foot">VEGORA admin guide · Prepared 15 November 2026 · Keep your password private. Never share it by message.</p>
+  <p class="foot">VEGORA admin guide · Prepared 16 November 2026 · Keep your password private. Never share it by message.</p>
 </main>
 </body>
 </html>
